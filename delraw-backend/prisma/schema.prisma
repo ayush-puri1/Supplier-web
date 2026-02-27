@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1️⃣ SYSTEM OVERVIEW (Enums)
+
+enum Role {
+  SUPPLIER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum SupplierStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  VERIFIED
+  CONDITIONAL
+  REJECTED
+  SUSPENDED
+}
+
+enum ProductStatus {
+  DRAFT
+  PENDING_APPROVAL
+  LIVE
+  REJECTED
+  DELISTED
+}
+
+// 2️⃣ DATABASE DESIGN (Models)
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  supplier Supplier?
+}
+
+model Supplier {
+  id              String         @id @default(uuid())
+  userId          String         @unique
+  companyName     String
+  gstNumber       String
+  address         String
+  city            String
+  country         String
+  yearEstablished Int
+  workforceSize   Int
+  monthlyCapacity Int
+  moq             Int
+  leadTimeDays    Int
+  responseTimeHr  Int
+  status          SupplierStatus @default(DRAFT)
+  trustScore      Int?
+  internalNotes   String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id])
+  documents Document[]
+  products  Product[]
+}
+
+model Document {
+  id         String   @id @default(uuid())
+  supplierId String
+  type       String
+  fileUrl    String
+  verified   Boolean  @default(false)
+  uploadedAt DateTime @default(now())
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+}
+
+model Product {
+  id          String        @id @default(uuid())
+  supplierId  String
+  name        String
+  description String?
+  category    String
+  specs       Json
+  moq         Int
+  leadTime    Int
+  price       Float?
+  unit        String?
+  images      String[]
+  status      ProductStatus @default(DRAFT)
+  isLive      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  createdAt  DateTime @default(now())
+}

@@ -1,0 +1,14 @@
+{
+  "datasourceUrl": {
+    "success": false,
+    "error": "Unknown property datasourceUrl provided to PrismaClient constructor.\nRead more at https://pris.ly/d/client-constructor"
+  },
+  "datasources": {
+    "success": false,
+    "error": "Unknown property datasources provided to PrismaClient constructor.\nRead more at https://pris.ly/d/client-constructor"
+  },
+  "empty": {
+    "success": false,
+    "error": "`PrismaClient` needs to be constructed with a non-empty, valid `PrismaClientOptions`:\n\n```\nnew PrismaClient({\n  ...\n})\n```\n\nor\n\n```\nconstructor() {\n  super({ ... });\n}\n```\n          "
+  }
+}
