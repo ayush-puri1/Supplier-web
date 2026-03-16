@@ -24,6 +24,7 @@ export class SupplierService {
                     userId,
                     companyName: 'Pending Setup',
                     gstNumber: '',
+                    panNumber: '',
                     address: '',
                     city: '',
                     country: '',
@@ -60,7 +61,7 @@ export class SupplierService {
 
         // Only allow updating specific fields
         const allowedFields = [
-            'companyName', 'gstNumber', 'address', 'city', 'country',
+            'companyName', 'gstNumber', 'panNumber', 'address', 'city', 'country',
             'yearEstablished', 'workforceSize', 'monthlyCapacity',
             'moq', 'leadTimeDays', 'responseTimeHr',
         ];
@@ -104,6 +105,69 @@ export class SupplierService {
                 status: 'SUBMITTED',
             },
             include: { user: { select: { email: true, role: true, createdAt: true } } },
+        });
+    }
+
+    // =====================================
+    // DASHBOARD & STATS
+    // =====================================
+
+    async getDashboardStats(userId: string) {
+        const supplier = await this.prisma.supplier.findUnique({
+            where: { userId },
+            include: {
+                products: { select: { status: true } },
+                orders: { select: { totalAmount: true, status: true } },
+            },
+        });
+
+        if (!supplier) throw new NotFoundException('Supplier not found');
+
+        const productStats = {
+            total: supplier.products.length,
+            live: supplier.products.filter(p => p.status === 'LIVE').length,
+            pending: supplier.products.filter(p => p.status === 'PENDING_APPROVAL').length,
+        };
+
+        const salesStats = {
+            totalOrders: supplier.orders.length,
+            totalRevenue: supplier.orders.reduce((sum, o) => sum + o.totalAmount, 0),
+        };
+
+        const notifications = await (this.prisma as any).notification.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+        });
+
+        // Get commission from system config
+        const config = await (this.prisma as any).systemConfig.findUnique({
+            where: { id: 'singleton' },
+        });
+
+        return {
+            productStats,
+            salesStats,
+            notifications,
+            commission: config?.businessCommission || 10,
+        };
+    }
+
+    // =====================================
+    // NOTIFICATIONS
+    // =====================================
+
+    async getNotifications(userId: string) {
+        return (this.prisma as any).notification.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    async markNotificationAsRead(userId: string, id: string) {
+        return (this.prisma as any).notification.updateMany({
+            where: { id, userId },
+            data: { isRead: true },
         });
     }
 }

@@ -10,6 +10,10 @@ import { AdminModule } from './admin/admin.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './auth/roles/roles.guard';
+import { AwsModule } from './aws/aws.module';
+import { MailModule } from './mail/mail.module';
+import { AuditModule } from './audit/audit.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -21,17 +25,15 @@ import { RolesGuard } from './auth/roles/roles.guard';
     DocumentsModule,
     AdminModule,
     SupplierModule,
+    AwsModule,
+    MailModule,
+    AuditModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
   ],
 })
 
 export class AppModule { }
-
-

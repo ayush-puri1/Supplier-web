@@ -1,120 +1,159 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
+import { fetchWithAuth } from "@/lib/api";
 
 export default function Register() {
+    const [step, setStep] = useState<1 | 2>(1);
     const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
     const [companyName, setCompanyName] = useState("");
+    const [otp, setOtp] = useState("");
+    const [password, setPassword] = useState("");
     const [error, setError] = useState("");
-    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
+    const { login } = useAuth();
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
+        setIsLoading(true);
 
         try {
-            const res = await fetch("http://localhost:3000/auth/register", {
+            await fetchWithAuth("/auth/send-otp", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password, companyName }),
+                body: JSON.stringify({ email }),
             });
-
-            if (!res.ok) {
-                throw new Error("Registration failed");
-            }
-
-            const data = await res.json();
-            localStorage.setItem("token", data.access_token);
-            router.push("/dashboard");
+            setStep(2);
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || "Failed to send OTP");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setIsLoading(true);
+
+        try {
+            const data = await fetchWithAuth("/auth/verify-otp", {
+                method: "POST",
+                body: JSON.stringify({ email, otp, password, companyName }),
+            });
+            login(data.access_token, data.user);
+        } catch (err: any) {
+            setError(err.message || "OTP Verification failed");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    Register as Supplier
-                </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
-                    Or{" "}
-                    <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-                        sign in to your account
-                    </Link>
-                </p>
-            </div>
+        <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="w-full max-w-md space-y-8 glass p-8 rounded-2xl shadow-2xl">
+                <div className="text-center">
+                    <h1 className="text-4xl font-bold text-gradient mb-2">
+                        {step === 1 ? "Join Delraw" : "Verify OTP"}
+                    </h1>
+                    <p className="text-muted-foreground">
+                        {step === 1 ? "Register as a supplier to start selling" : `Enter the code sent to ${email}`}
+                    </p>
+                </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
-                    <form className="space-y-6" onSubmit={handleSubmit}>
-                        <div>
-                            <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
-                                Company Name
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="companyName"
-                                    name="companyName"
-                                    type="text"
-                                    required
-                                    className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm text-black"
-                                    value={companyName}
-                                    onChange={(e) => setCompanyName(e.target.value)}
-                                />
+                {step === 1 ? (
+                    <form className="space-y-6" onSubmit={handleSendOtp}>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium ml-1">Company Name</label>
+                            <input
+                                type="text"
+                                required
+                                className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                placeholder="Delraw Industries"
+                                value={companyName}
+                                onChange={(e) => setCompanyName(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium ml-1">Email address</label>
+                            <input
+                                type="email"
+                                required
+                                className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                placeholder="name@company.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </div>
+
+                        {error && (
+                            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
+                                {error}
                             </div>
-                        </div>
+                        )}
 
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Email address
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    autoComplete="email"
-                                    required
-                                    className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm text-black"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Password
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    autoComplete="current-password"
-                                    required
-                                    className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm text-black"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        {error && <div className="text-red-500 text-sm">{error}</div>}
-
-                        <div>
-                            <button
-                                type="submit"
-                                className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                            >
-                                Register
-                            </button>
-                        </div>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full py-3 px-4 premium-gradient text-white font-semibold rounded-xl shadow-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? "Sending OTP..." : "Get OTP Code"}
+                        </button>
                     </form>
+                ) : (
+                    <form className="space-y-6" onSubmit={handleVerifyOtp}>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium ml-1">OTP Code</label>
+                            <input
+                                type="text"
+                                required
+                                maxLength={6}
+                                className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-center tracking-widest text-2xl font-bold"
+                                placeholder="000000"
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium ml-1">Set Account Password</label>
+                            <input
+                                type="password"
+                                required
+                                minLength={6}
+                                className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </div>
+
+                        {error && (
+                            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
+                                {error}
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full py-3 px-4 premium-gradient text-white font-semibold rounded-xl shadow-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? "Verifying..." : "Complete Registration"}
+                        </button>
+                    </form>
+                )}
+
+                <div className="text-center pt-4">
+                    <p className="text-sm text-muted-foreground">
+                        Already have an account?{" "}
+                        <Link href="/login" className="text-primary font-medium hover:underline">
+                            Sign in here
+                        </Link>
+                    </p>
                 </div>
             </div>
         </div>

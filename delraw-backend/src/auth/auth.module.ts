@@ -4,10 +4,14 @@ import { AuthController } from './auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt-strategy/jwt.strategy';
+import { MailModule } from '../mail/mail.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
     imports: [
         PrismaModule,
+        MailModule,
+        AuditModule,
         JwtModule.register({
             secret: process.env.JWT_SECRET || 'delraw_secret',
             signOptions: { expiresIn: '1d' },

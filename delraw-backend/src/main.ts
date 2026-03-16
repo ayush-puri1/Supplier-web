@@ -8,14 +8,14 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:3000'],
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
     credentials: true,
   });
 
   // Global validation
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(`🚀 Backend running on http://localhost:${process.env.PORT ?? 3000}`);
+  await app.listen(process.env.PORT ?? 5000);
+  console.log(`🚀 Backend running on http://localhost:${process.env.PORT ?? 5000}`);
 }
 bootstrap();

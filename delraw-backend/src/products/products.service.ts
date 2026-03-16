@@ -1,10 +1,35 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Product, ProductStatus } from '@prisma/client';
+import { AwsService } from '../aws/aws.service';
 
 @Injectable()
 export class ProductsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private awsService: AwsService,
+    ) { }
+
+    private static readonly CATEGORIES = [
+        'Raw Materials',
+        'Textiles',
+        'Chemicals',
+        'Electronics',
+        'Hardware',
+        'Packaging',
+        'Machinery',
+        'Logistics Services'
+    ];
+
+    async getCategories(): Promise<string[]> {
+        return ProductsService.CATEGORIES;
+    }
+
+    async uploadImage(file: Express.Multer.File): Promise<{ url: string }> {
+        if (!file) throw new BadRequestException('No file provided');
+        const url = await this.awsService.uploadFile(file, 'products');
+        return { url };
+    }
 
     async create(userId: string, data: any): Promise<Product> {
         const supplier = await this.prisma.supplier.findUnique({ where: { userId } });
@@ -12,20 +37,36 @@ export class ProductsService {
             throw new NotFoundException('Supplier profile not found');
         }
 
+        // Validate category if provided
+        if (data.category && !ProductsService.CATEGORIES.includes(data.category)) {
+            // Optional: throw error or just allow it. For now, let's just log or be flexible but keep it in mind.
+        }
+
+        const { variants, ...restData } = data;
+
         return this.prisma.product.create({
             data: {
-                name: data.name,
-                description: data.description || null,
-                category: data.category,
-                specs: data.specs || {},
-                moq: parseInt(data.moq) || 0,
-                leadTime: parseInt(data.leadTime) || 0,
-                price: data.price ? parseFloat(data.price) : null,
-                unit: data.unit || null,
-                images: data.images || [],
+                name: restData.name,
+                description: restData.description || null,
+                category: restData.category,
+                specs: restData.specs || {},
+                moq: parseInt(restData.moq) || 0,
+                leadTime: parseInt(restData.leadTime) || 0,
+                price: restData.price ? parseFloat(restData.price) : null,
+                unit: restData.unit || null,
+                images: restData.images || [],
                 supplierId: supplier.id,
                 status: ProductStatus.PENDING_APPROVAL,
+                variants: {
+                    create: Array.isArray(variants) ? variants.map((v: any) => ({
+                        sku: v.sku || null,
+                        name: v.name,
+                        price: v.price ? parseFloat(v.price) : null,
+                        stock: v.stock ? parseInt(v.stock) : 0,
+                    })) : [],
+                }
             },
+            include: { variants: true },
         });
     }
 
@@ -35,11 +76,12 @@ export class ProductsService {
         return this.prisma.product.findMany({
             where: { supplierId: supplier.id },
             orderBy: { createdAt: 'desc' },
+            include: { variants: true },
         });
     }
 
     async findOne(id: string): Promise<Product | null> {
-        return this.prisma.product.findUnique({ where: { id } });
+        return this.prisma.product.findUnique({ where: { id }, include: { variants: true } });
     }
 
     async update(userId: string, id: string, data: any): Promise<Product> {
