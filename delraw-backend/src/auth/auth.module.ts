@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt-strategy/jwt.strategy';
 import { MailModule } from '../mail/mail.module';
 import { AuditModule } from '../audit/audit.module';
+import { SessionService } from './session.service';
 
 @Module({
     imports: [
@@ -17,7 +18,8 @@ import { AuditModule } from '../audit/audit.module';
             signOptions: { expiresIn: '1d' },
         }),
     ],
-    providers: [AuthService, JwtStrategy],
+    providers: [AuthService, JwtStrategy, SessionService],
     controllers: [AuthController],
+    exports: [AuthService, SessionService],
 })
 export class AuthModule { }

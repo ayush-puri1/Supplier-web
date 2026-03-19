@@ -36,9 +36,14 @@ export class AuditService {
         endDate?: string;
         skip?: number;
         take?: number;
+        page?: number;
     }) {
-        const skip = filters?.skip || 0;
         const take = filters?.take || 20;
+        let skip = filters?.skip || 0;
+
+        if (filters?.page) {
+            skip = (filters.page - 1) * take;
+        }
 
         const where: any = {};
         if (filters?.action) where.action = filters.action;
@@ -60,9 +65,12 @@ export class AuditService {
             this.prisma.auditLog.count({ where }),
         ]);
 
+        const totalPages = Math.ceil(total / take);
+
         return {
-            items,
+            logs: items,
             total,
+            totalPages,
             skip,
             take,
         };

@@ -10,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { MailService } from '../mail/mail.service';
 import { AuditService } from '../audit/audit.service';
 import { v4 as uuidv4 } from 'uuid';
+import { SessionService } from './session.service';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
         private jwt: JwtService,
         private mail: MailService,
         private audit: AuditService,
+        private sessionService: SessionService,
     ) { }
 
     private async hashToken(token: string): Promise<string> {
@@ -195,7 +197,7 @@ export class AuthService {
     // =============================
     // LOGIN
     // =============================
-    async login(email: string, password: string) {
+    async login(email: string, password: string, req: any) {
         const user = await this.prisma.user.findUnique({
             where: { email },
         });
@@ -219,7 +221,19 @@ export class AuthService {
             details: `User logged in`,
         });
 
-        return this.generateTokenResponse(user.id, user.email, user.role);
+        const tokens = await this.generateTokenResponse(user.id, user.email, user.role);
+
+        // CREATE SESSION
+        const sessionExpiry = new Date();
+        sessionExpiry.setDate(sessionExpiry.getDate() + 7);
+        await this.sessionService.createSession({
+            userId: user.id,
+            ipAddress: req.ip || req.connection?.remoteAddress || 'unknown',
+            userAgent: req.headers?.['user-agent'] || 'unknown',
+            expiresAt: sessionExpiry,
+        });
+
+        return tokens;
     }
 
     // =============================
@@ -258,7 +272,7 @@ export class AuthService {
     private async generateTokenResponse(userId: string, email: string, role: string) {
         const payload = { sub: userId, email, role };
         const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
-        
+
         // 1. Generate a secure random refresh token (with userId prefix)
         const rawRefreshToken = `${userId}.${uuidv4()}-${uuidv4()}`;
 
@@ -302,6 +316,8 @@ export class AuthService {
                     refreshTokenExpiresAt: null,
                 },
             });
+
+            await this.sessionService.deactivateAllSessions(userId);
 
             const decoded = this.jwt.decode(token) as any;
             if (!decoded || !decoded.exp) {
@@ -352,9 +368,9 @@ export class AuthService {
 
         await this.prisma.user.update({
             where: { email },
-            data: { 
-                passwordResetOtp: otp, 
-                passwordResetExpiry: otpExpiry 
+            data: {
+                passwordResetOtp: otp,
+                passwordResetExpiry: otpExpiry
             },
         });
 
@@ -370,7 +386,7 @@ export class AuthService {
         if (!user) throw new UnauthorizedException('User not found');
 
         if (!user.passwordResetOtp) throw new UnauthorizedException('No active session');
-        
+
         if (user.passwordResetExpiry && new Date() > user.passwordResetExpiry) {
             throw new UnauthorizedException('Refresh token expired'); // Following user's error message style or standard
         }
@@ -380,17 +396,17 @@ export class AuthService {
         }
 
         if (password) {
-           const hash = await bcrypt.hash(password, 10);
-           await this.prisma.user.update({
-               where: { email },
-               data: {
-                   password: hash,
-                   passwordResetOtp: null,
-                   passwordResetExpiry: null,
-                   refreshTokenHash: null, // Force re-login on all devices
-                   refreshTokenExpiresAt: null,
-               },
-           });
+            const hash = await bcrypt.hash(password, 10);
+            await this.prisma.user.update({
+                where: { email },
+                data: {
+                    password: hash,
+                    passwordResetOtp: null,
+                    passwordResetExpiry: null,
+                    refreshTokenHash: null, // Force re-login on all devices
+                    refreshTokenExpiresAt: null,
+                },
+            });
         }
 
         return { message: 'Password reset successful' };

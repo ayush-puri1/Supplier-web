@@ -33,6 +33,12 @@ enum ProductStatus {
   DELISTED
 }
 
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
 // 2️⃣ DATABASE DESIGN (Models)
 
 model User {
@@ -55,6 +61,19 @@ model User {
 
   supplier      Supplier?
   notifications Notification[]
+  sessions      UserSession[]
+}
+
+model UserSession {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress    String?
+  userAgent    String?
+  deviceType   String?  // 'mobile', 'desktop', 'tablet', or 'unknown'
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  isActive     Boolean  @default(true)
 }
 
 model Supplier {
@@ -90,7 +109,10 @@ model Document {
   supplierId String
   type       String
   fileUrl    String
-  verified   Boolean  @default(false)
+  status          DocumentStatus  @default(PENDING)
+  rejectionReason String?
+  reviewedAt      DateTime?
+  reviewedBy      String?         // adminId who reviewed it
   uploadedAt DateTime @default(now())
 
   supplier Supplier @relation(fields: [supplierId], references: [id])
@@ -107,7 +129,8 @@ model Product {
   leadTime    Int
   price       Float?
   unit        String?
-  images      String[]
+  legacyImages String[]
+  images      ProductImage[]
   status      ProductStatus @default(DRAFT)
   rejectionReason String?
   isLive      Boolean       @default(false)
@@ -117,6 +140,17 @@ model Product {
   supplier Supplier         @relation(fields: [supplierId], references: [id])
   orders   Order[]
   variants ProductVariant[]
+}
+
+model ProductImage {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url         String   // S3 URL
+  key         String   // S3 object key (needed for deletion)
+  order       Int      @default(0)  // 0 = main image, 1,2,3 = gallery
+  alt         String?  // accessible alt text
+  createdAt   DateTime @default(now())
 }
 
 model ProductVariant {
@@ -171,7 +205,13 @@ model SystemConfig {
   onboardingEnabled     Boolean  @default(true)
   productPublishing     Boolean  @default(true)
   businessCommission    Float    @default(10.0)
-  updatedAt             DateTime @updatedAt
+  maxProductsPerSupplier    Int      @default(50)
+  supplierAutoApprove       Boolean  @default(false)
+  allowNewRegistrations     Boolean  @default(true)
+  platformName              String   @default("Delraw")
+  supportEmail              String   @default("support@delraw.com")
+  updatedAt                 DateTime @updatedAt
+  updatedBy                 String?  // adminId who last changed config
 }
 
 model Notification {

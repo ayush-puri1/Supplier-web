@@ -15,6 +15,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
 import { AdminService } from './admin.service';
+import { SessionService } from '../auth/session.service';
 import { Roles } from '../auth/roles/roles.decorator';
 import { RolesGuard } from '../auth/roles/roles.guard';
 
@@ -32,6 +33,8 @@ import {
     UpdateUserActiveDto,
     ForcePasswordResetDto,
 } from './dto/admin.dto';
+import { UpdateSystemConfigDto } from './dto/update-config.dto';
+import { RejectDocumentDto } from './dto/review-document.dto';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -39,7 +42,10 @@ import {
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 @ApiBearerAuth()
 export class AdminController {
-    constructor(private readonly adminService: AdminService) { }
+    constructor(
+        private readonly adminService: AdminService,
+        private readonly sessionService: SessionService,
+    ) { }
 
     // =====================================
     // DASHBOARD STATS
@@ -222,8 +228,8 @@ export class AdminController {
 
     @Patch('config')
     @Roles(Role.SUPER_ADMIN)
-    async updateConfig(@Body() data: any) {
-        return this.adminService.updateSystemConfig(data);
+    async updateConfig(@Body() dto: UpdateSystemConfigDto, @Request() req) {
+        return this.adminService.updateSystemConfig(dto, req.user.userId);
     }
 
     // =====================================
@@ -237,5 +243,33 @@ export class AdminController {
         @Body('internalNotes') internalNotes: string,
     ) {
         return this.adminService.updateInternalNote(id, internalNotes);
+    }
+
+    // =====================================
+    // SESSIONS
+    // =====================================
+    @Get('sessions')
+    @ApiOperation({ summary: 'Get all active sessions' })
+    async getActiveSessions(@Query() pagination: PaginationDto) {
+        return this.sessionService.getAllSessionsForAdmin(pagination.skip, pagination.take);
+    }
+
+    // =====================================
+    // DOCUMENTS
+    // =====================================
+    @Patch('documents/:id/approve')
+    @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+    async approveDocument(@Param('id') id: string, @Request() req) {
+        return this.adminService.approveDocument(id, req.user.userId, req.user.email);
+    }
+
+    @Patch('documents/:id/reject')
+    @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+    async rejectDocument(
+        @Param('id') id: string,
+        @Body() dto: RejectDocumentDto,
+        @Request() req
+    ) {
+        return this.adminService.rejectDocument(id, dto.reason, req.user.userId, req.user.email);
     }
 }

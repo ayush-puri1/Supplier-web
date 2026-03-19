@@ -27,7 +27,7 @@ export class ProductsService {
 
     async uploadImage(file: Express.Multer.File): Promise<{ url: string }> {
         if (!file) throw new BadRequestException('No file provided');
-        const url = await this.awsService.uploadFile(file, 'products');
+        const { url } = await this.awsService.uploadFile(file, 'products');
         return { url };
     }
 
@@ -35,6 +35,19 @@ export class ProductsService {
         const supplier = await this.prisma.supplier.findUnique({ where: { userId } });
         if (!supplier) {
             throw new NotFoundException('Supplier profile not found');
+        }
+
+        // Check max products limit
+        const config = await this.prisma.systemConfig.findUnique({
+            where: { id: 'singleton' },
+        });
+
+        const productCount = await this.prisma.product.count({
+            where: { supplierId: supplier.id },
+        });
+
+        if (config && productCount >= config.maxProductsPerSupplier) {
+            throw new BadRequestException(`Product limit of ${config.maxProductsPerSupplier} reached`);
         }
 
         // Validate category if provided
@@ -54,7 +67,6 @@ export class ProductsService {
                 leadTime: parseInt(restData.leadTime) || 0,
                 price: restData.price ? parseFloat(restData.price) : null,
                 unit: restData.unit || null,
-                images: restData.images || [],
                 supplierId: supplier.id,
                 status: ProductStatus.PENDING_APPROVAL,
                 variants: {
@@ -66,7 +78,7 @@ export class ProductsService {
                     })) : [],
                 }
             },
-            include: { variants: true },
+            include: { variants: true, images: true },
         });
     }
 
@@ -78,7 +90,7 @@ export class ProductsService {
             this.prisma.product.findMany({
                 where: { supplierId: supplier.id },
                 orderBy: { createdAt: 'desc' },
-                include: { variants: true },
+                include: { variants: true, images: { orderBy: { order: 'asc' } } },
                 skip,
                 take,
             }),
@@ -91,7 +103,7 @@ export class ProductsService {
     }
 
     async findOne(id: string): Promise<Product | null> {
-        return this.prisma.product.findUnique({ where: { id }, include: { variants: true } });
+        return this.prisma.product.findUnique({ where: { id }, include: { variants: true, images: { orderBy: { order: 'asc' } } } });
     }
 
     async update(userId: string, id: string, data: any): Promise<Product> {
@@ -137,5 +149,37 @@ export class ProductsService {
             where: { id },
             data: { status, isLive },
         });
+    }
+
+    async addProductImage(productId: string, file: Express.Multer.File, order: number, alt: string, userId: string) {
+        const supplier = await this.prisma.supplier.findUnique({ where: { userId } });
+        if (!supplier) throw new NotFoundException('Supplier profile not found');
+
+        const product = await this.prisma.product.findFirst({
+            where: { id: productId, supplierId: supplier.id }
+        });
+        if (!product) throw new ForbiddenException('Product not found or not yours');
+
+        const { url, key } = await this.awsService.uploadFile(file, `products/${productId}`);
+
+        return this.prisma.productImage.create({
+            data: { productId, url, key, order, alt }
+        });
+    }
+
+    async removeProductImage(productId: string, imageId: string, userId: string) {
+        const supplier = await this.prisma.supplier.findUnique({ where: { userId } });
+        if (!supplier) throw new NotFoundException('Supplier profile not found');
+
+        const product = await this.prisma.product.findFirst({ where: { id: productId, supplierId: supplier.id } });
+        if (!product) throw new ForbiddenException('Product not found or not yours');
+
+        const image = await this.prisma.productImage.findUnique({ where: { id: imageId } });
+        if (!image || image.productId !== productId) throw new NotFoundException('Image not found');
+
+        await this.awsService.deleteFile(image.key);
+
+        await this.prisma.productImage.delete({ where: { id: imageId } });
+        return { message: 'Image deleted' };
     }
 }

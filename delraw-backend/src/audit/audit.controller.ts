@@ -29,6 +29,7 @@ export class AuditController {
         @Query('entityType') entityType?: string,
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string,
+        @Query('page') page?: string,
         @Query() pagination?: PaginationDto,
     ) {
         const skip = pagination?.skip || 0;
@@ -42,6 +43,7 @@ export class AuditController {
             endDate,
             skip,
             take,
+            page: page ? parseInt(page) : undefined,
         });
     }
 

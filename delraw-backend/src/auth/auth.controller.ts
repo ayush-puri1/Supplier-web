@@ -53,10 +53,11 @@ export class AuthController {
     @Throttle({ short: { limit: 5, ttl: 60000 } })
     @Post('login')
     @ApiOperation({ summary: 'Login with email and password' })
-    login(@Body() dto: LoginDto) {
+    login(@Body() dto: LoginDto, @Request() req) {
         return this.authService.login(
             dto.email,
             dto.password,
+            req
         );
     }
 

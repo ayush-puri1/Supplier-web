@@ -452,12 +452,14 @@ export class AdminService {
     // =====================================
 
     async getSystemConfig() {
-        let config = await (this.prisma as any).systemConfig.findUnique({
+        // SystemConfig is a singleton — there is always exactly one row
+        let config = await this.prisma.systemConfig.findUnique({
             where: { id: 'singleton' },
         });
 
         if (!config) {
-            config = await (this.prisma as any).systemConfig.create({
+            // create with defaults if it doesn't exist yet
+            config = await this.prisma.systemConfig.create({
                 data: { id: 'singleton' },
             });
         }
@@ -465,20 +467,76 @@ export class AdminService {
         return config;
     }
 
-    async updateSystemConfig(data: any) {
-        // Filter out read-only or problematic fields
-        const { id, updatedAt, ...updateData } = data;
+    async updateSystemConfig(dto: any, adminId: string) {
+        const config = await this.getSystemConfig();
+        
+        // Filter out read-only or problematic fields if any
+        const { id, updatedAt, ...updateData } = dto;
 
-        return (this.prisma as any).systemConfig.upsert({
-            where: { id: 'singleton' },
-            update: updateData,
-            create: { id: 'singleton', ...updateData },
+        return this.prisma.systemConfig.update({
+            where: { id: config.id },
+            data: { ...updateData, updatedBy: adminId },
         });
     }
 
     // =====================================
     // ADMIN: INTERNAL NOTES
     // =====================================
+
+    async approveDocument(documentId: string, adminId: string, adminEmail?: string) {
+        const doc = await this.prisma.document.findUnique({ where: { id: documentId } });
+        if (!doc) throw new NotFoundException('Document not found');
+
+        const updated = await this.prisma.document.update({
+            where: { id: documentId },
+            data: {
+                status: 'VERIFIED',
+                rejectionReason: null,
+                reviewedAt: new Date(),
+                reviewedBy: adminId,
+            }
+        });
+
+        await this.audit.log({
+            action: 'DOCUMENT_APPROVED',
+            actorId: adminId,
+            actorEmail: adminEmail,
+            entityType: 'Document',
+            entityId: documentId,
+            details: `Document approved. SupplierId: ${doc.supplierId}`
+        });
+
+        return updated;
+    }
+
+    async rejectDocument(documentId: string, reason: string, adminId: string, adminEmail?: string) {
+        const doc = await this.prisma.document.findUnique({ where: { id: documentId } });
+        if (!doc) throw new NotFoundException('Document not found');
+        if (!reason || reason.trim().length < 5) {
+            throw new BadRequestException('Rejection reason must be at least 5 characters');
+        }
+
+        const updated = await this.prisma.document.update({
+            where: { id: documentId },
+            data: {
+                status: 'REJECTED',
+                rejectionReason: reason.trim(),
+                reviewedAt: new Date(),
+                reviewedBy: adminId,
+            }
+        });
+
+        await this.audit.log({
+            action: 'DOCUMENT_REJECTED',
+            actorId: adminId,
+            actorEmail: adminEmail,
+            entityType: 'Document',
+            entityId: documentId,
+            details: `Document rejected. Reason: ${reason}. SupplierId: ${doc.supplierId}`
+        });
+
+        return updated;
+    }
 
     async updateInternalNote(id: string, internalNotes: string) {
         const supplier = await this.prisma.supplier.findUnique({ where: { id } });

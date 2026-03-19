@@ -14,7 +14,10 @@ export class SupplierService {
     async getProfile(userId: string) {
         let supplier = await this.prisma.supplier.findUnique({
             where: { userId },
-            include: { user: { select: { email: true, role: true, createdAt: true } } },
+            include: { 
+                user: { select: { email: true, role: true, createdAt: true } },
+                documents: true,
+            },
         });
 
         // Auto-create if missing
@@ -36,7 +39,10 @@ export class SupplierService {
                     responseTimeHr: 0,
                     status: 'DRAFT',
                 },
-                include: { user: { select: { email: true, role: true, createdAt: true } } },
+                include: { 
+                    user: { select: { email: true, role: true, createdAt: true } },
+                    documents: true,
+                },
             });
         }
 
@@ -99,10 +105,16 @@ export class SupplierService {
             throw new ForbiddenException('Can only submit from DRAFT status');
         }
 
+        const config = await this.prisma.systemConfig.findUnique({
+            where: { id: 'singleton' },
+        });
+
+        const newStatus = config?.supplierAutoApprove ? 'VERIFIED' : 'SUBMITTED';
+
         return this.prisma.supplier.update({
             where: { id: supplier.id },
             data: {
-                status: 'SUBMITTED',
+                status: newStatus as any,
             },
             include: { user: { select: { email: true, role: true, createdAt: true } } },
         });

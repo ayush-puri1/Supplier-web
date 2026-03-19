@@ -63,4 +63,29 @@ export class ProductsController {
     async remove(@Request() req, @Param('id') id: string) {
         return this.productsService.remove(req.user.userId, id);
     }
+
+    @Roles(Role.SUPPLIER)
+    @Post(':id/images')
+    @UseInterceptors(FileInterceptor('file'))
+    @ApiOperation({ summary: 'Add a new image to the product gallery' })
+    async addProductImage(
+        @Param('id') productId: string,
+        @UploadedFile() file: Express.Multer.File,
+        @Body('order') order: string,
+        @Body('alt') alt: string,
+        @Request() req
+    ) {
+        return this.productsService.addProductImage(productId, file, parseInt(order) || 0, alt, req.user.userId);
+    }
+
+    @Roles(Role.SUPPLIER)
+    @Delete(':productId/images/:imageId')
+    @ApiOperation({ summary: 'Remove an image from the product gallery' })
+    async deleteProductImage(
+        @Param('productId') productId: string,
+        @Param('imageId') imageId: string,
+        @Request() req
+    ) {
+        return this.productsService.removeProductImage(productId, imageId, req.user.userId);
+    }
 }

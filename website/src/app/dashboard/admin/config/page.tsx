@@ -109,12 +109,51 @@ export default function AdminConfig() {
                             </div>
                         </div>
                     </section>
+                    <section className="glass p-6 rounded-2xl border border-border">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Platform Identity</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold mb-2">Platform Name</label>
+                                <input
+                                    type="text"
+                                    value={config.platformName || ''}
+                                    onChange={(e) => handleUpdate('platformName', e.target.value)}
+                                    className="w-full p-3 rounded-xl bg-background border border-border focus:ring-1 focus:ring-primary outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold mb-2">Support Email</label>
+                                <input
+                                    type="email"
+                                    value={config.supportEmail || ''}
+                                    onChange={(e) => handleUpdate('supportEmail', e.target.value)}
+                                    className="w-full p-3 rounded-xl bg-background border border-border focus:ring-1 focus:ring-primary outline-none"
+                                />
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
                 <div className="space-y-6">
+                    <section className="glass p-6 rounded-2xl border border-border">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Supplier Limits</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold mb-2">Max Products Per Supplier</label>
+                                <input
+                                    type="number"
+                                    value={isNaN(config.maxProductsPerSupplier) ? '' : config.maxProductsPerSupplier}
+                                    onChange={(e) => handleUpdate('maxProductsPerSupplier', e.target.value === '' ? 0 : parseInt(e.target.value))}
+                                    onFocus={(e) => e.target.select()}
+                                    className="w-full p-3 rounded-xl bg-background border border-border focus:ring-1 focus:ring-primary outline-none"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
                     <section className="glass p-6 rounded-2xl border border-border bg-gradient-to-br from-red-500/5 to-transparent">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Critical Operations</h3>
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-background/50">
                                 <div>
                                     <p className="text-sm font-bold">Maintenance Mode</p>
@@ -125,6 +164,32 @@ export default function AdminConfig() {
                                     className={`w-12 h-6 rounded-full transition-all relative ${config.isMaintenanceMode ? 'bg-red-500' : 'bg-zinc-700'}`}
                                 >
                                     <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${config.isMaintenanceMode ? 'right-1' : 'left-1'}`}></div>
+                                </button>
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-background/50">
+                                <div>
+                                    <p className="text-sm font-bold">Supplier Auto-Approve</p>
+                                    <p className="text-[10px] text-muted-foreground">Auto-verify new profiles</p>
+                                </div>
+                                <button
+                                    onClick={() => handleUpdate('supplierAutoApprove', !config.supplierAutoApprove)}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${config.supplierAutoApprove ? 'bg-green-500' : 'bg-zinc-700'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${config.supplierAutoApprove ? 'right-1' : 'left-1'}`}></div>
+                                </button>
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-background/50">
+                                <div>
+                                    <p className="text-sm font-bold">Allow Registrations</p>
+                                    <p className="text-[10px] text-muted-foreground">Enable public supplier sign-up</p>
+                                </div>
+                                <button
+                                    onClick={() => handleUpdate('allowNewRegistrations', !config.allowNewRegistrations)}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${config.allowNewRegistrations ? 'bg-blue-500' : 'bg-zinc-700'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${config.allowNewRegistrations ? 'right-1' : 'left-1'}`}></div>
                                 </button>
                             </div>
                         </div>
