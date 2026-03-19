@@ -37,7 +37,7 @@ export default function AdminAnalytics() {
     if (loading) return <div className="text-center py-20 opacity-50">Loading analytics engine...</div>;
     if (!data) return <div className="text-center py-20 text-red-500">Failed to load analytics</div>;
 
-    const { summary, distributions, topSuppliers, trends, recentActivity } = data;
+    const { summary, distributions, topSuppliers, recentActivity } = data;
 
     return (
         <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">

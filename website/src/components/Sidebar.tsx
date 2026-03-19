@@ -11,7 +11,6 @@ export default function Sidebar() {
 
     const adminLinks = [
         { name: 'Overview', href: '/dashboard/admin', icon: '📊' },
-        { name: 'Analytics', href: '/dashboard/admin/analytics', icon: '📈' },
         { name: 'Suppliers', href: '/dashboard/admin/suppliers', icon: '🏢' },
         { name: 'Products', href: '/dashboard/admin/products', icon: '📦' },
         { name: 'Audit Logs', href: '/dashboard/admin/audit-logs', icon: '📝' },

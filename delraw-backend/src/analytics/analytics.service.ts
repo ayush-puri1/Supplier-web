@@ -59,23 +59,6 @@ export class AnalyticsService {
             }
         });
 
-        // Time Series (simplified: group by month via raw query or simple manual grouping for MVP)
-        // For Postgres, raw query is easiest for date truncation.
-        const supplierRegistrations = await this.prisma.$queryRaw`
-            SELECT DATE_TRUNC('month', "createdAt") as month, CAST(COUNT(id) AS INTEGER) as count
-            FROM "Supplier"
-            GROUP BY DATE_TRUNC('month', "createdAt")
-            ORDER BY month DESC
-            LIMIT 6
-        `;
-
-        const productSubmissions = await this.prisma.$queryRaw`
-            SELECT DATE_TRUNC('month', "createdAt") as month, CAST(COUNT(id) AS INTEGER) as count
-            FROM "Product"
-            GROUP BY DATE_TRUNC('month', "createdAt")
-            ORDER BY month DESC
-            LIMIT 6
-        `;
 
         return {
             summary: {
@@ -90,10 +73,6 @@ export class AnalyticsService {
                 product: productDistribution,
             },
             topSuppliers,
-            trends: {
-                suppliers: supplierRegistrations,
-                products: productSubmissions,
-            }
         };
     }
 }
