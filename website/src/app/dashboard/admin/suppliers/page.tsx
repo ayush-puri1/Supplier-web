@@ -59,11 +59,20 @@ export default function AdminSuppliers() {
     useEffect(() => { setLoading(true); loadSuppliers(); }, [activeTab]);
 
     const handleUpdateStatus = async (id: string, status: string) => {
+        let rejectionReason = "";
+        if (status === 'REJECTED') {
+            rejectionReason = prompt("Please provide a reason for rejection:") || "";
+            if (!rejectionReason) {
+                alert("Rejection reason is required.");
+                return;
+            }
+        }
+
         setActionLoading(true);
         try {
             await fetchWithAuth(`/admin/suppliers/${id}/status`, {
                 method: 'PATCH',
-                body: JSON.stringify({ status }),
+                body: JSON.stringify({ status, rejectionReason }),
             });
             await loadSuppliers();
             if (selectedSupplier?.id === id) {
@@ -185,6 +194,12 @@ export default function AdminSuppliers() {
                                     <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-bold uppercase border ${STATUS_COLORS[selectedSupplier.status] || ''}`}>
                                         {selectedSupplier.status.replace('_', ' ')}
                                     </span>
+                                    {selectedSupplier.status === 'REJECTED' && selectedSupplier.rejectionReason && (
+                                        <div className="mt-4 p-4 rounded-xl bg-red-500/5 border border-red-500/10 text-left animate-in fade-in zoom-in duration-300">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Rejection Reason</p>
+                                            <p className="text-sm text-red-700/80 italic">"{selectedSupplier.rejectionReason}"</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Status Actions */}

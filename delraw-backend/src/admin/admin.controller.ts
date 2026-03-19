@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 import { AdminService } from './admin.service';
 import { Roles } from '../auth/roles/roles.decorator';
@@ -22,10 +23,21 @@ import {
     SupplierStatus,
     ProductStatus,
 } from '@prisma/client';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+    UpdateSupplierStatusDto,
+    UpdateProductStatusDto,
+    CreateAdminDto,
+    UpdateUserRoleDto,
+    UpdateUserActiveDto,
+    ForcePasswordResetDto,
+} from './dto/admin.dto';
 
+@ApiTags('Admin')
 @Controller('admin')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+@ApiBearerAuth()
 export class AdminController {
     constructor(private readonly adminService: AdminService) { }
 
@@ -41,18 +53,21 @@ export class AdminController {
     // GET ALL SUPPLIERS (OPTIONAL FILTER)
     // =====================================
     @Get('suppliers')
+    @ApiOperation({ summary: 'Get all suppliers with optional status filter' })
     async getSuppliers(
-        @Query('status') status?: SupplierStatus,
+        @Query('status') status: SupplierStatus,
+        @Query() pagination: PaginationDto,
     ) {
-        return this.adminService.findAllSuppliers(status);
+        return this.adminService.findAllSuppliers(status, pagination.skip, pagination.take);
     }
 
     // =====================================
     // GET PENDING / UNDER REVIEW SUPPLIERS
     // =====================================
     @Get('suppliers/pending')
-    async getPendingSuppliers() {
-        return this.adminService.getPendingSuppliers();
+    @ApiOperation({ summary: 'Get pending / under review suppliers' })
+    async getPendingSuppliers(@Query() pagination: PaginationDto) {
+        return this.adminService.getPendingSuppliers(pagination.skip, pagination.take);
     }
 
     // =====================================
@@ -67,22 +82,25 @@ export class AdminController {
     // UPDATE SUPPLIER STATUS
     // =====================================
     @Patch('suppliers/:id/status')
+    @ApiOperation({ summary: 'Update supplier status with optional rejection reason' })
     async updateSupplierStatus(
         @Param('id') id: string,
-        @Body('status') status: SupplierStatus,
+        @Body() dto: UpdateSupplierStatusDto,
         @Request() req,
     ) {
-        return this.adminService.updateSupplierStatus(id, status, req.user.userId, req.user.email);
+        return this.adminService.updateSupplierStatus(id, dto.status, dto.rejectionReason, req.user.userId, req.user.email);
     }
 
     // =====================================
     // GET ALL PRODUCTS
     // =====================================
     @Get('products')
+    @ApiOperation({ summary: 'Get all products with optional status filter' })
     async getAllProducts(
-        @Query('status') status?: ProductStatus,
+        @Query('status') status: ProductStatus,
+        @Query() pagination: PaginationDto,
     ) {
-        return this.adminService.getAllProducts(status);
+        return this.adminService.getAllProducts(status, pagination.skip, pagination.take);
     }
 
     // =====================================
@@ -97,12 +115,13 @@ export class AdminController {
     // UPDATE PRODUCT STATUS
     // =====================================
     @Patch('products/:id/status')
+    @ApiOperation({ summary: 'Update product status with optional rejection reason' })
     async updateProductStatus(
         @Param('id') id: string,
-        @Body('status') status: ProductStatus,
+        @Body() dto: UpdateProductStatusDto,
         @Request() req,
     ) {
-        return this.adminService.updateProductStatus(id, status, req.user.userId, req.user.email);
+        return this.adminService.updateProductStatus(id, dto.status, dto.rejectionReason, req.user.userId, req.user.email);
     }
 
     // =====================================
@@ -111,48 +130,52 @@ export class AdminController {
 
     @Get('users')
     @Roles(Role.SUPER_ADMIN)
-    async getAllUsers() {
-        return this.adminService.findAllUsers();
+    @ApiOperation({ summary: 'SUPER ADMIN: Get all users' })
+    async getAllUsers(@Query() pagination: PaginationDto) {
+        return this.adminService.findAllUsers(pagination.skip, pagination.take);
     }
 
     @Post('users')
     @Roles(Role.SUPER_ADMIN)
+    @ApiOperation({ summary: 'SUPER ADMIN: Create a new admin' })
     async createAdmin(
-        @Body('email') email: string,
-        @Body('password') password: string,
+        @Body() dto: CreateAdminDto,
         @Request() req,
     ) {
-        return this.adminService.createAdmin(email, password, req.user.userId, req.user.email);
+        return this.adminService.createAdmin(dto.email, dto.password, req.user.userId, req.user.email);
     }
 
     @Patch('users/:id/role')
     @Roles(Role.SUPER_ADMIN)
+    @ApiOperation({ summary: 'SUPER ADMIN: Update user role' })
     async updateUserRole(
         @Param('id') id: string,
-        @Body('role') role: Role,
+        @Body() dto: UpdateUserRoleDto,
         @Request() req,
     ) {
-        return this.adminService.updateUserRole(id, role, req.user.userId, req.user.email);
+        return this.adminService.updateUserRole(id, dto.role, req.user.userId, req.user.email);
     }
 
     @Patch('users/:id/active')
     @Roles(Role.SUPER_ADMIN)
+    @ApiOperation({ summary: 'SUPER ADMIN: Toggle user active status' })
     async toggleUserStatus(
         @Param('id') id: string,
-        @Body('isActive') isActive: boolean,
+        @Body() dto: UpdateUserActiveDto,
         @Request() req,
     ) {
-        return this.adminService.toggleUserStatus(id, isActive, req.user.userId, req.user.email);
+        return this.adminService.toggleUserStatus(id, dto.isActive, req.user.userId, req.user.email);
     }
 
     @Post('users/:id/reset-password')
     @Roles(Role.SUPER_ADMIN)
+    @ApiOperation({ summary: 'SUPER ADMIN: Force password reset for a user' })
     async resetPassword(
         @Param('id') id: string,
-        @Body('newPassword') newPassword: string,
+        @Body() dto: ForcePasswordResetDto,
         @Request() req,
     ) {
-        return this.adminService.forcePasswordReset(id, newPassword, req.user.userId, req.user.email);
+        return this.adminService.forcePasswordReset(id, dto.newPassword, req.user.userId, req.user.email);
     }
 
     // =====================================

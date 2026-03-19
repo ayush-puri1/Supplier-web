@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { fetchWithAuth } from "@/lib/api";
+import api from "@/lib/api";
 import OnboardingForm from "@/components/supplier/OnboardingForm";
 import PendingReview from "@/components/supplier/PendingReview";
+import StatusBadge from "@/components/StatusBadge";
 
 export default function SupplierDashboard() {
     const [profile, setProfile] = useState<any>(null);
@@ -13,11 +14,11 @@ export default function SupplierDashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const profileRes = await fetchWithAuth('/supplier/me');
+            const profileRes: any = await api.get('/supplier/me');
             setProfile(profileRes);
 
             if (profileRes.status === 'VERIFIED') {
-                const result = await fetchWithAuth('/supplier/dashboard');
+                const result: any = await api.get('/supplier/dashboard');
                 setData(result);
             }
         } catch (err) {
@@ -56,7 +57,10 @@ export default function SupplierDashboard() {
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold mb-2">Supplier Dashboard</h1>
+                    <div className="flex items-center gap-3 mb-2">
+                        <h1 className="text-3xl font-bold">Supplier Dashboard</h1>
+                        <StatusBadge status={profile.status} />
+                    </div>
                     <p className="text-muted-foreground">Manage your products and track your growth.</p>
                 </div>
                 <button className="px-6 py-3 premium-gradient text-white font-bold rounded-xl shadow-lg hover:translate-y-[-2px] transition-all">

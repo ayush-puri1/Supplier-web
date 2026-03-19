@@ -9,13 +9,20 @@ export class AuditService {
         actorId: string;
         actorEmail?: string;
         action: string;
-        entityType: string;
-        entityId: string;
+        entityType?: string;
+        entityId?: string;
         details?: string;
+        metadata?: any;
         ipAddress?: string;
     }) {
         try {
-            await this.prisma.auditLog.create({ data: params });
+            await this.prisma.auditLog.create({ 
+                data: {
+                    ...params,
+                    entityType: params.entityType || null,
+                    entityId: params.entityId || null,
+                } as any 
+            });
         } catch (err) {
             console.error('Audit log write failed:', err);
         }
@@ -27,12 +34,11 @@ export class AuditService {
         entityType?: string;
         startDate?: string;
         endDate?: string;
-        page?: number;
-        limit?: number;
+        skip?: number;
+        take?: number;
     }) {
-        const page = filters?.page || 1;
-        const limit = filters?.limit || 30;
-        const skip = (page - 1) * limit;
+        const skip = filters?.skip || 0;
+        const take = filters?.take || 20;
 
         const where: any = {};
         if (filters?.action) where.action = filters.action;
@@ -44,22 +50,21 @@ export class AuditService {
             if (filters?.endDate) where.createdAt.lte = new Date(filters.endDate);
         }
 
-        const [logs, total] = await Promise.all([
+        const [items, total] = await Promise.all([
             this.prisma.auditLog.findMany({
                 where,
                 orderBy: { createdAt: 'desc' },
                 skip,
-                take: limit,
+                take,
             }),
             this.prisma.auditLog.count({ where }),
         ]);
 
         return {
-            logs,
+            items,
             total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
+            skip,
+            take,
         };
     }
 

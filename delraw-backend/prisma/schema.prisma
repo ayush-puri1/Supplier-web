@@ -44,6 +44,12 @@ model User {
   otp             String?
   otpExpiry       DateTime?
   isEmailVerified Boolean   @default(false)
+  otpAttempts     Int       @default(0)
+  otpLastAttempt  DateTime?
+  refreshTokenHash  String?   // bcrypt hash of the current refresh token
+  refreshTokenExpiresAt DateTime? // when the refresh token expires
+  passwordResetOtp      String?
+  passwordResetExpiry   DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -67,6 +73,7 @@ model Supplier {
   leadTimeDays    Int
   responseTimeHr  Int
   status          SupplierStatus @default(DRAFT)
+  rejectionReason String?
   trustScore      Int?
   internalNotes   String?
   createdAt       DateTime       @default(now())
@@ -102,6 +109,7 @@ model Product {
   unit        String?
   images      String[]
   status      ProductStatus @default(DRAFT)
+  rejectionReason String?
   isLive      Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -127,9 +135,10 @@ model AuditLog {
   actorId    String
   actorEmail String?
   action     String
-  entityType String
-  entityId   String
+  entityType String?
+  entityId   String?
   details    String?
+  metadata   Json?
   ipAddress  String?
   createdAt  DateTime @default(now())
 
@@ -150,6 +159,7 @@ model RevokedToken {
   @@index([userId])
   @@index([token])
 }
+
 
 model SystemConfig {
   id                    String   @id @default("singleton")

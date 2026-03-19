@@ -6,6 +6,7 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { MailService } from '../mail/mail.service';
 
 import {
     SupplierStatus,
@@ -20,6 +21,7 @@ export class AdminService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly audit: AuditService,
+        private readonly mail: MailService,
     ) { }
 
     private readonly supplierInclude = {
@@ -81,23 +83,37 @@ export class AdminService {
     // =====================================
     // GET ALL SUPPLIERS (OPTIONAL FILTER)
     // =====================================
-    async findAllSuppliers(status?: SupplierStatus) {
-        return this.prisma.supplier.findMany({
-            where: status ? { status } : {},
-            include: this.supplierInclude,
-            orderBy: { createdAt: 'desc' },
-        });
+    async findAllSuppliers(status?: SupplierStatus, skip = 0, take = 20) {
+        const [items, total] = await Promise.all([
+            this.prisma.supplier.findMany({
+                where: status ? { status } : {},
+                include: this.supplierInclude,
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take,
+            }),
+            this.prisma.supplier.count({ where: status ? { status } : {} }),
+        ]);
+        return { items, total, skip, take };
     }
 
     // =====================================
     // GET PENDING / UNDER REVIEW SUPPLIERS
     // =====================================
-    async getPendingSuppliers() {
-        return this.prisma.supplier.findMany({
-            where: { status: { in: [SupplierStatus.SUBMITTED, SupplierStatus.UNDER_REVIEW] } },
-            include: this.supplierInclude,
-            orderBy: { createdAt: 'desc' },
-        });
+    async getPendingSuppliers(skip = 0, take = 20) {
+        const [items, total] = await Promise.all([
+            this.prisma.supplier.findMany({
+                where: { status: { in: [SupplierStatus.SUBMITTED, SupplierStatus.UNDER_REVIEW] } },
+                include: this.supplierInclude,
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take,
+            }),
+            this.prisma.supplier.count({
+                where: { status: { in: [SupplierStatus.SUBMITTED, SupplierStatus.UNDER_REVIEW] } },
+            }),
+        ]);
+        return { items, total, skip, take };
     }
 
     // =====================================
@@ -133,7 +149,7 @@ export class AdminService {
         [SupplierStatus.DRAFT]: [],
     };
 
-    async updateSupplierStatus(id: string, newStatus: SupplierStatus, actorId?: string, actorEmail?: string) {
+    async updateSupplierStatus(id: string, newStatus: SupplierStatus, rejectionReason?: string, actorId?: string, actorEmail?: string) {
         const supplier = await this.prisma.supplier.findUnique({ where: { id } });
         if (!supplier) throw new NotFoundException('Supplier not found');
 
@@ -146,9 +162,16 @@ export class AdminService {
 
         const result = await this.prisma.supplier.update({
             where: { id },
-            data: { status: newStatus },
+            data: { status: newStatus, rejectionReason } as any,
             include: this.supplierInclude,
         });
+
+        // Send Email Notifications
+        if (newStatus === SupplierStatus.VERIFIED) {
+            await this.mail.sendSupplierApproved(result.user.email, result.companyName);
+        } else if (newStatus === SupplierStatus.REJECTED) {
+            await this.mail.sendSupplierRejected(result.user.email, result.companyName, rejectionReason || 'No reason provided');
+        }
 
         await this.audit.log({
             actorId: actorId || 'system',
@@ -156,7 +179,7 @@ export class AdminService {
             action: 'SUPPLIER_STATUS_CHANGE',
             entityType: 'Supplier',
             entityId: id,
-            details: `${supplier.status} → ${newStatus}`,
+            details: `${supplier.status} → ${newStatus}${rejectionReason ? ` Reason: ${rejectionReason}` : ''}`,
         });
 
         return result;
@@ -165,20 +188,26 @@ export class AdminService {
     // =====================================
     // GET ALL PRODUCTS (OPTIONAL FILTER)
     // =====================================
-    async getAllProducts(status?: ProductStatus) {
-        return this.prisma.product.findMany({
-            where: status ? { status } : {},
-            include: {
-                supplier: {
-                    select: {
-                        companyName: true,
-                        id: true,
-                        user: { select: { email: true } }
+    async getAllProducts(status?: ProductStatus, skip = 0, take = 20) {
+        const [items, total] = await Promise.all([
+            this.prisma.product.findMany({
+                where: status ? { status } : {},
+                include: {
+                    supplier: {
+                        select: {
+                            companyName: true,
+                            id: true,
+                            user: { select: { email: true } }
+                        },
                     },
                 },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take,
+            }),
+            this.prisma.product.count({ where: status ? { status } : {} }),
+        ]);
+        return { items, total, skip, take };
     }
 
     // =====================================
@@ -207,7 +236,7 @@ export class AdminService {
         [ProductStatus.REJECTED]: [ProductStatus.PENDING_APPROVAL],
     };
 
-    async updateProductStatus(id: string, newStatus: ProductStatus, actorId?: string, actorEmail?: string) {
+    async updateProductStatus(id: string, newStatus: ProductStatus, rejectionReason?: string, actorId?: string, actorEmail?: string) {
         const product = await this.prisma.product.findUnique({ where: { id } });
         if (!product) throw new NotFoundException('Product not found');
 
@@ -222,11 +251,19 @@ export class AdminService {
 
         const result = await this.prisma.product.update({
             where: { id },
-            data: { status: newStatus, isLive },
+            data: { status: newStatus, isLive, rejectionReason } as any,
             include: {
                 supplier: { select: { companyName: true, id: true, user: { select: { email: true } } } },
             },
         });
+
+        // Send Email Notifications
+        const supplierEmail = (result.supplier as any).user.email;
+        if (newStatus === ProductStatus.LIVE) {
+            await this.mail.sendProductApproved(supplierEmail, result.name);
+        } else if (newStatus === ProductStatus.REJECTED) {
+            await this.mail.sendProductRejected(supplierEmail, result.name, rejectionReason || 'No reason provided');
+        }
 
         await this.audit.log({
             actorId: actorId || 'system',
@@ -234,7 +271,7 @@ export class AdminService {
             action: 'PRODUCT_STATUS_CHANGE',
             entityType: 'Product',
             entityId: id,
-            details: `${product.status} → ${newStatus}`,
+            details: `${product.status} → ${newStatus}${rejectionReason ? ` Reason: ${rejectionReason}` : ''}`,
         });
 
         return result;
@@ -244,21 +281,27 @@ export class AdminService {
     // SUPER ADMIN: USER MANAGEMENT
     // =====================================
 
-    async findAllUsers() {
+    async findAllUsers(skip = 0, take = 20) {
         try {
-            return await this.prisma.user.findMany({
-                select: {
-                    id: true,
-                    email: true,
-                    role: true,
-                    isActive: true,
-                    createdAt: true,
-                    supplier: {
-                        select: { id: true, companyName: true, status: true },
+            const [items, total] = await Promise.all([
+                this.prisma.user.findMany({
+                    select: {
+                        id: true,
+                        email: true,
+                        role: true,
+                        isActive: true,
+                        createdAt: true,
+                        supplier: {
+                            select: { id: true, companyName: true, status: true },
+                        },
                     },
-                },
-                orderBy: { createdAt: 'desc' },
-            });
+                    orderBy: { createdAt: 'desc' },
+                    skip,
+                    take,
+                }),
+                this.prisma.user.count(),
+            ]);
+            return { items, total, skip, take };
         } catch (error) {
             console.error('ERROR in findAllUsers:', error);
             throw error;

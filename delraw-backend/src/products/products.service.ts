@@ -70,14 +70,24 @@ export class ProductsService {
         });
     }
 
-    async findAll(userId: string): Promise<Product[]> {
+    async findAll(userId: string, skip = 0, take = 20): Promise<{ items: Product[], total: number, skip: number, take: number }> {
         const supplier = await this.prisma.supplier.findUnique({ where: { userId } });
-        if (!supplier) return [];
-        return this.prisma.product.findMany({
-            where: { supplierId: supplier.id },
-            orderBy: { createdAt: 'desc' },
-            include: { variants: true },
-        });
+        if (!supplier) return { items: [], total: 0, skip, take };
+
+        const [items, total] = await Promise.all([
+            this.prisma.product.findMany({
+                where: { supplierId: supplier.id },
+                orderBy: { createdAt: 'desc' },
+                include: { variants: true },
+                skip,
+                take,
+            }),
+            this.prisma.product.count({
+                where: { supplierId: supplier.id },
+            }),
+        ]);
+
+        return { items, total, skip, take };
     }
 
     async findOne(id: string): Promise<Product | null> {

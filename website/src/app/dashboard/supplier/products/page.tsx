@@ -67,11 +67,20 @@ export default function SupplierProducts() {
                                 <div className="absolute top-4 left-4">
                                     <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${p.status === 'LIVE' ? 'bg-emerald-500 text-white' :
                                         p.status === 'PENDING_APPROVAL' ? 'bg-amber-500 text-white' :
-                                            'bg-zinc-800 text-white'
+                                            p.status === 'REJECTED' ? 'bg-red-500 text-white' :
+                                                'bg-zinc-800 text-white'
                                         }`}>
                                         {p.status.replace('_', ' ')}
                                     </span>
                                 </div>
+                                {p.status === 'REJECTED' && p.rejectionReason && (
+                                    <div className="absolute bottom-2 left-4 right-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="bg-red-500 text-white p-2 rounded-lg text-[10px] shadow-xl border border-white/20">
+                                            <span className="font-bold block mb-0.5">REJECTION REASON:</span>
+                                            {p.rejectionReason}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div className="p-6 flex-1 flex flex-col">
                                 <h3 className="text-lg font-bold mb-1 truncate">{p.name}</h3>

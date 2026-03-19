@@ -67,10 +67,18 @@ export default function SupplierProfile() {
                 <div className="text-right">
                     <span className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest ${profile.status === 'VERIFIED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
                         profile.status === 'SUBMITTED' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
-                            'bg-zinc-500/10 text-zinc-500 border border-zinc-500/20'
+                            profile.status === 'REJECTED' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                                'bg-zinc-500/10 text-zinc-500 border border-zinc-500/20'
                         }`}>
                         Status: {profile.status}
                     </span>
+                    {profile.status === 'REJECTED' && profile.rejectionReason && (
+                        <div className="mt-4 p-4 rounded-xl bg-red-500/5 border border-red-500/10 text-left animate-in fade-in slide-in-from-top-2 duration-500">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Rejection Reason</p>
+                            <p className="text-sm text-red-700/80 italic">"{profile.rejectionReason}"</p>
+                            <p className="text-[10px] mt-2 opacity-50">Please correct the issues and save to re-submit.</p>
+                        </div>
+                    )}
                     {profile.status === 'DRAFT' && (
                         <button
                             onClick={handleSubmitForReview}

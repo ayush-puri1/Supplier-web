@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { fetchWithAuth } from "@/lib/api";
+import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 export default function AdminOverview() {
@@ -12,7 +12,7 @@ export default function AdminOverview() {
     useEffect(() => {
         const loadStats = async () => {
             try {
-                const data = await fetchWithAuth('/admin/stats');
+                const data: any = await api.get('/admin/stats');
                 setStats(data);
             } catch (err) {
                 console.error(err);
