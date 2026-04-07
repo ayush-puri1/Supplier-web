@@ -1,213 +1,151 @@
-
 'use client';
 
-import { useEffect, useState } from "react";
-import { fetchWithAuth } from "@/lib/api";
-import { useAuth } from "@/hooks/useAuth";
+import React, { useEffect, useState } from 'react';
+import { fetchWithAuth } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
+import ToggleSwitch from '@/components/ui/ToggleSwitch';
+import AlertBanner from '@/components/ui/AlertBanner';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { ShieldOff } from 'lucide-react';
 
-export default function AdminConfig() {
-    const { user: currentUser } = useAuth();
-    const [config, setConfig] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+export default function SystemConfigPage() {
+  const { user } = useAuth();
+  const [config, setConfig] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-    const loadConfig = async () => {
-        try {
-            const data = await fetchWithAuth('/admin/config');
-            setConfig(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+  // Form fields
+  const [businessCommission, setBusinessCommission] = useState('');
+  const [defaultTrustScore, setDefaultTrustScore] = useState('');
+  const [maxFailedLogins, setMaxFailedLogins] = useState('');
+  const [platformName, setPlatformName] = useState('');
+  const [supportEmail, setSupportEmail] = useState('');
+  const [maxProductsPerSupplier, setMaxProductsPerSupplier] = useState('');
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [supplierAutoApprove, setSupplierAutoApprove] = useState(false);
+  const [allowNewRegistrations, setAllowNewRegistrations] = useState(true);
 
-    useEffect(() => {
-        if (currentUser?.role === 'SUPER_ADMIN') {
-            loadConfig();
-        }
-    }, [currentUser]);
+  useEffect(() => {
+    fetchWithAuth('/admin/config').then((data: any) => {
+      setConfig(data);
+      setBusinessCommission(data.businessCommission?.toString() || '10');
+      setDefaultTrustScore(data.defaultTrustScore?.toString() || '50');
+      setMaxFailedLogins(data.maxFailedLogins?.toString() || '5');
+      setPlatformName(data.platformName || 'Delraw');
+      setSupportEmail(data.supportEmail || 'support@delraw.com');
+      setMaxProductsPerSupplier(data.maxProductsPerSupplier?.toString() || '100');
+      setIsMaintenanceMode(data.isMaintenanceMode || false);
+      setSupplierAutoApprove(data.supplierAutoApprove || false);
+      setAllowNewRegistrations(data.allowNewRegistrations !== false);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
 
-    const handleUpdate = async (field: string, value: any) => {
-        setConfig((prev: any) => ({ ...prev, [field]: value }));
-    };
-
-    const handleSave = async () => {
-        setSaving(true);
-        try {
-            await fetchWithAuth('/admin/config', {
-                method: 'PATCH',
-                body: JSON.stringify(config),
-            });
-            alert('Settings saved successfully');
-        } catch (err) {
-            alert('Failed to save settings');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    if (currentUser?.role !== 'SUPER_ADMIN') {
-        return (
-            <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
-                <span className="text-6xl">🚫</span>
-                <h1 className="text-2xl font-bold">Access Denied</h1>
-                <p className="text-muted-foreground max-w-md">This page is restricted to Super Admin users only.</p>
-            </div>
-        );
-    }
-
-    if (loading) return <div className="text-center py-20 opacity-50">Loading platform settings...</div>;
-
+  // Access check
+  if (!loading && user?.role !== 'SUPER_ADMIN') {
     return (
-        <div className="max-w-4xl space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-            <div>
-                <h1 className="text-3xl font-bold mb-2 text-gradient">System Configuration</h1>
-                <p className="text-muted-foreground">Adjust platform-wide thresholds, commissions, and operational mode.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                    <section className="glass p-6 rounded-2xl border border-border">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Financial Controls</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold mb-2">Platform Commission (%)</label>
-                                <input
-                                    type="number"
-                                    value={isNaN(config.businessCommission) ? '' : config.businessCommission}
-                                    onChange={(e) => handleUpdate('businessCommission', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                                    onFocus={(e) => e.target.select()}
-                                    className="w-full p-3 rounded-xl bg-background border border-border focus:ring-1 focus:ring-primary outline-none"
-                                />
-                            </div>
-                        </div>
-                    </section>
-
-                    <section className="glass p-6 rounded-2xl border border-border">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Trust Thresholds</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold mb-2">Default Trust Score</label>
-                                <input
-                                    type="number"
-                                    value={isNaN(config.defaultTrustScore) ? '' : config.defaultTrustScore}
-                                    onChange={(e) => handleUpdate('defaultTrustScore', e.target.value === '' ? 0 : parseInt(e.target.value))}
-                                    onFocus={(e) => e.target.select()}
-                                    className="w-full p-3 rounded-xl bg-background border border-border focus:ring-1 focus:ring-primary outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold mb-2">Max Failed Logins Threshold</label>
-                                <input
-                                    type="number"
-                                    value={isNaN(config.maxFailedLogins) ? '' : config.maxFailedLogins}
-                                    onChange={(e) => handleUpdate('maxFailedLogins', e.target.value === '' ? 0 : parseInt(e.target.value))}
-                                    onFocus={(e) => e.target.select()}
-                                    className="w-full p-3 rounded-xl bg-background border border-border focus:ring-1 focus:ring-primary outline-none"
-                                />
-                            </div>
-                        </div>
-                    </section>
-                    <section className="glass p-6 rounded-2xl border border-border">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Platform Identity</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold mb-2">Platform Name</label>
-                                <input
-                                    type="text"
-                                    value={config.platformName || ''}
-                                    onChange={(e) => handleUpdate('platformName', e.target.value)}
-                                    className="w-full p-3 rounded-xl bg-background border border-border focus:ring-1 focus:ring-primary outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold mb-2">Support Email</label>
-                                <input
-                                    type="email"
-                                    value={config.supportEmail || ''}
-                                    onChange={(e) => handleUpdate('supportEmail', e.target.value)}
-                                    className="w-full p-3 rounded-xl bg-background border border-border focus:ring-1 focus:ring-primary outline-none"
-                                />
-                            </div>
-                        </div>
-                    </section>
-                </div>
-
-                <div className="space-y-6">
-                    <section className="glass p-6 rounded-2xl border border-border">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Supplier Limits</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold mb-2">Max Products Per Supplier</label>
-                                <input
-                                    type="number"
-                                    value={isNaN(config.maxProductsPerSupplier) ? '' : config.maxProductsPerSupplier}
-                                    onChange={(e) => handleUpdate('maxProductsPerSupplier', e.target.value === '' ? 0 : parseInt(e.target.value))}
-                                    onFocus={(e) => e.target.select()}
-                                    className="w-full p-3 rounded-xl bg-background border border-border focus:ring-1 focus:ring-primary outline-none"
-                                />
-                            </div>
-                        </div>
-                    </section>
-
-                    <section className="glass p-6 rounded-2xl border border-border bg-gradient-to-br from-red-500/5 to-transparent">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Critical Operations</h3>
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-background/50">
-                                <div>
-                                    <p className="text-sm font-bold">Maintenance Mode</p>
-                                    <p className="text-[10px] text-muted-foreground">Blocks all non-admin traffic</p>
-                                </div>
-                                <button
-                                    onClick={() => handleUpdate('isMaintenanceMode', !config.isMaintenanceMode)}
-                                    className={`w-12 h-6 rounded-full transition-all relative ${config.isMaintenanceMode ? 'bg-red-500' : 'bg-zinc-700'}`}
-                                >
-                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${config.isMaintenanceMode ? 'right-1' : 'left-1'}`}></div>
-                                </button>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-background/50">
-                                <div>
-                                    <p className="text-sm font-bold">Supplier Auto-Approve</p>
-                                    <p className="text-[10px] text-muted-foreground">Auto-verify new profiles</p>
-                                </div>
-                                <button
-                                    onClick={() => handleUpdate('supplierAutoApprove', !config.supplierAutoApprove)}
-                                    className={`w-12 h-6 rounded-full transition-all relative ${config.supplierAutoApprove ? 'bg-green-500' : 'bg-zinc-700'}`}
-                                >
-                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${config.supplierAutoApprove ? 'right-1' : 'left-1'}`}></div>
-                                </button>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-background/50">
-                                <div>
-                                    <p className="text-sm font-bold">Allow Registrations</p>
-                                    <p className="text-[10px] text-muted-foreground">Enable public supplier sign-up</p>
-                                </div>
-                                <button
-                                    onClick={() => handleUpdate('allowNewRegistrations', !config.allowNewRegistrations)}
-                                    className={`w-12 h-6 rounded-full transition-all relative ${config.allowNewRegistrations ? 'bg-blue-500' : 'bg-zinc-700'}`}
-                                >
-                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${config.allowNewRegistrations ? 'right-1' : 'left-1'}`}></div>
-                                </button>
-                            </div>
-                        </div>
-                    </section>
-
-                    <div className="p-8 rounded-2xl premium-gradient text-white shadow-xl shadow-primary/20">
-                        <h3 className="text-xl font-bold mb-2">Safety Notice</h3>
-                        <p className="text-xs opacity-80 leading-relaxed mb-6">Changes saved here will affect all users instantly. Ensure you have verified the new thresholds before applying.</p>
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="w-full py-3 bg-white text-primary font-black rounded-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
-                        >
-                            {saving ? 'SAVING...' : 'APPLY CHANGES NOW'}
-                        </button>
-                    </div>
-                </div>
-            </div>
+      <DashboardLayout title="System Config">
+        <div className="flex flex-col items-center justify-center h-[60vh] text-center animate-fade-in-up">
+          <ShieldOff className="w-16 h-16 text-[#D1D5DB] mb-4" />
+          <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[#0F1117] mb-2">Access Denied</h1>
+          <p className="text-sm text-[#6B7280]">This page is restricted to Super Admin users only.</p>
         </div>
+      </DashboardLayout>
     );
+  }
+
+  const handleSave = async () => {
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      await fetchWithAuth('/admin/config', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          businessCommission: parseFloat(businessCommission) || 10,
+          defaultTrustScore: parseInt(defaultTrustScore) || 50,
+          maxFailedLogins: parseInt(maxFailedLogins) || 5,
+          platformName, supportEmail,
+          maxProductsPerSupplier: parseInt(maxProductsPerSupplier) || 100,
+          isMaintenanceMode, supplierAutoApprove, allowNewRegistrations,
+        }),
+      });
+      setSuccess('Configuration saved successfully.');
+    } catch (err: any) { setError(err?.response?.data?.message || 'Failed to save'); } finally { setSaving(false); }
+  };
+
+  if (loading) return <DashboardLayout title="System Config"><div className="flex items-center justify-center h-[60vh]"><LoadingSpinner size="lg" /></div></DashboardLayout>;
+
+  const inputCls = "w-full px-4 py-3 rounded-xl border border-[#E5E7EB] text-sm focus:border-[#0D9373] focus:ring-2 focus:ring-[#0D9373]/20 outline-none transition-all";
+
+  return (
+    <DashboardLayout title="System Config">
+      <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold bg-gradient-to-r from-[#0D9373] to-[#065F46] bg-clip-text text-transparent mb-1">System Configuration</h1>
+          <p className="text-sm text-[#6B7280]">Adjust platform-wide thresholds, commissions, and operational mode.</p>
+        </div>
+
+        {error && <AlertBanner type="error" message={error} onClose={() => setError('')} />}
+        {success && <AlertBanner type="success" message={success} onClose={() => setSuccess('')} />}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
+              <h3 className="font-semibold text-[#0F1117]">Financial Controls</h3>
+              <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Platform Commission (%)</label><input type="number" value={businessCommission} onChange={(e) => setBusinessCommission(e.target.value)} className={inputCls} /></div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
+              <h3 className="font-semibold text-[#0F1117]">Trust Thresholds</h3>
+              <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Default Trust Score</label><input type="number" value={defaultTrustScore} onChange={(e) => setDefaultTrustScore(e.target.value)} className={inputCls} /></div>
+              <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Max Failed Logins</label><input type="number" value={maxFailedLogins} onChange={(e) => setMaxFailedLogins(e.target.value)} className={inputCls} /></div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
+              <h3 className="font-semibold text-[#0F1117]">Platform Identity</h3>
+              <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Platform Name</label><input type="text" value={platformName} onChange={(e) => setPlatformName(e.target.value)} className={inputCls} /></div>
+              <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Support Email</label><input type="email" value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} className={inputCls} /></div>
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
+              <h3 className="font-semibold text-[#0F1117]">Supplier Limits</h3>
+              <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Max Products Per Supplier</label><input type="number" value={maxProductsPerSupplier} onChange={(e) => setMaxProductsPerSupplier(e.target.value)} className={inputCls} /></div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-5">
+              <h3 className="font-semibold text-[#0F1117]">Critical Operations</h3>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+                <div><p className="text-sm font-semibold text-[#0F1117]">Maintenance Mode</p><p className="text-xs text-[#6B7280]">Blocks all non-admin traffic</p></div>
+                <ToggleSwitch enabled={isMaintenanceMode} onChange={setIsMaintenanceMode} color="bg-red-500" />
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+                <div><p className="text-sm font-semibold text-[#0F1117]">Supplier Auto-Approve</p><p className="text-xs text-[#6B7280]">Auto-verify new profiles</p></div>
+                <ToggleSwitch enabled={supplierAutoApprove} onChange={setSupplierAutoApprove} color="bg-[#0D9373]" />
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+                <div><p className="text-sm font-semibold text-[#0F1117]">Allow Registrations</p><p className="text-xs text-[#6B7280]">Enable public supplier sign-up</p></div>
+                <ToggleSwitch enabled={allowNewRegistrations} onChange={setAllowNewRegistrations} color="bg-blue-500" />
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-[#0D9373] to-[#065F46] rounded-2xl p-6 text-white">
+              <h3 className="font-semibold mb-2">Safety Notice</h3>
+              <p className="text-sm text-white/70 mb-5">Changes saved here will affect all users instantly. Ensure you have verified the new thresholds before applying.</p>
+              <button onClick={handleSave} disabled={saving} className="w-full py-3 rounded-xl bg-white text-[#0D9373] font-bold text-sm hover:bg-white/90 transition-all disabled:opacity-50">
+                {saving ? 'Saving...' : 'APPLY CHANGES NOW'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
 }

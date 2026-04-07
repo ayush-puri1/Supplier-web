@@ -1,250 +1,165 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { fetchWithAuth } from "@/lib/api";
-import { Trash2, Plus, UploadCloud, X } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
+import AlertBanner from '@/components/ui/AlertBanner';
+import { ArrowLeft, UploadCloud, X, Plus, Trash2 } from 'lucide-react';
+import api from '@/lib/api';
+import Link from 'next/link';
 
-export default function NewProduct() {
-    const router = useRouter();
-    const [categories, setCategories] = useState<string[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [fetchingCategories, setFetchingCategories] = useState(true);
-    const [uploadingImage, setUploadingImage] = useState(false);
-    const [error, setError] = useState("");
+export default function AddProductPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
 
-    const [form, setForm] = useState({
-        name: "",
-        category: "",
-        description: "",
-        price: "",
-        moq: "100",
-        leadTime: "7",
-        unit: "units",
-    });
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [unit, setUnit] = useState('units');
+  const [moq, setMoq] = useState('');
+  const [leadTime, setLeadTime] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [variants, setVariants] = useState<Array<{ name: string; sku: string; price: string; stock: string }>>([]);
 
-    const [images, setImages] = useState<string[]>([]);
-    const [variants, setVariants] = useState([{ name: '', sku: '', price: '', stock: '0' }]);
+  useEffect(() => {
+    fetchWithAuth('/products/categories').then((data: any) => {
+      setCategories(Array.isArray(data) ? data : []);
+    }).catch(() => {});
+  }, []);
 
-    useEffect(() => {
-        const loadCategories = async () => {
-            try {
-                const data = await fetchWithAuth('/products/categories');
-                setCategories(data);
-                if (data.length > 0) setForm(f => ({ ...f, category: data[0] }));
-            } catch (err) {
-                console.error("Failed to load categories", err);
-            } finally {
-                setFetchingCategories(false);
-            }
-        };
-        loadCategories();
-    }, []);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res: any = await api.post('/products/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const url = res?.url || res?.data?.url || res;
+      if (typeof url === 'string') setImages([...images, url]);
+    } catch { setError('Failed to upload image'); } finally { setUploadingImage(false); }
+  };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
+  const removeImage = (i: number) => setImages(images.filter((_, idx) => idx !== i));
 
-    const handleVariantChange = (index: number, field: string, value: string) => {
-        const newVariants = [...variants];
-        newVariants[index] = { ...newVariants[index], [field]: value };
-        setVariants(newVariants);
-    };
+  const addVariant = () => setVariants([...variants, { name: '', sku: '', price: '', stock: '' }]);
+  const updateVariant = (i: number, field: string, val: string) => {
+    const v = [...variants]; (v[i] as any)[field] = val; setVariants(v);
+  };
+  const removeVariant = (i: number) => setVariants(variants.filter((_, idx) => idx !== i));
 
-    const addVariant = () => setVariants([...variants, { name: '', sku: '', price: '', stock: '0' }]);
-    const removeVariant = (index: number) => setVariants(variants.filter((_, i) => i !== index));
-    const removeImage = (index: number) => setImages(images.filter((_, i) => i !== index));
+  const handleSubmit = async () => {
+    setError('');
+    if (!name.trim()) { setError('Product name is required'); return; }
+    if (!price) { setError('Price is required'); return; }
+    setLoading(true);
+    try {
+      await fetchWithAuth('/products', {
+        method: 'POST',
+        body: JSON.stringify({
+          name, category, description,
+          price: parseFloat(price), unit,
+          moq: parseInt(moq) || 1,
+          leadTime: parseInt(leadTime) || 7,
+          images,
+          variants: variants.filter(v => v.name).map(v => ({ name: v.name, sku: v.sku, price: v.price ? parseFloat(v.price) : undefined, stock: parseInt(v.stock) || 0 })),
+          specs: {},
+        }),
+      });
+      router.push('/dashboard/supplier/products');
+    } catch (err: any) { setError(err?.response?.data?.message || 'Failed to create product'); } finally { setLoading(false); }
+  };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
-        const file = e.target.files[0];
-        setUploadingImage(true);
-        setError("");
+  const inputCls = "w-full px-4 py-3 rounded-xl border border-[#E5E7EB] text-sm focus:border-[#0D9373] focus:ring-2 focus:ring-[#0D9373]/20 outline-none transition-all";
 
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            const accessToken = localStorage.getItem('access_token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/upload-image`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                body: formData
-            });
-            
-            if (!res.ok) throw new Error("Image upload failed");
-            const data = await res.json();
-            
-            setImages(prev => [...prev, data.url]);
-        } catch (err: any) {
-            setError(err.message || "Failed to upload image");
-        } finally {
-            setUploadingImage(false);
-            if (e.target) e.target.value = '';
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
-
-        try {
-            await fetchWithAuth('/products', {
-                method: 'POST',
-                body: JSON.stringify({
-                    ...form,
-                    price: parseFloat(form.price),
-                    moq: parseInt(form.moq),
-                    leadTime: parseInt(form.leadTime),
-                    images,
-                    variants,
-                    specs: {} 
-                }),
-            });
-            router.push('/dashboard/supplier/products');
-        } catch (err: any) {
-            setError(err.message || "Failed to create product");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (fetchingCategories) return <div className="text-center py-20 opacity-50">Preparing workspace...</div>;
-
-    return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-            <div>
-                <button onClick={() => router.back()} className="text-sm font-bold opacity-50 hover:opacity-100 transition-all flex items-center mb-6">
-                    ← Back to Products
-                </button>
-                <h1 className="text-4xl font-black mb-2 flex items-center gap-3">Post New Product ✨</h1>
-                <p className="text-muted-foreground">Add details, images, and variations for your product catalogue.</p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Images Section */}
-                <div className="glass p-8 rounded-3xl border border-border/50 shadow-xl space-y-6">
-                    <h2 className="text-xl font-bold flex items-center gap-2 border-b border-border pb-2"><UploadCloud className="w-5 h-5 text-primary"/> Product Images</h2>
-                    
-                    <div className="flex flex-wrap gap-4">
-                        {images.map((url, idx) => (
-                            <div key={idx} className="relative w-32 h-32 rounded-xl overflow-hidden border border-border group bg-secondary/20">
-                                <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-contain" />
-                                <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-destructive/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <X size={14} />
-                                </button>
-                            </div>
-                        ))}
-
-                        <label className="w-32 h-32 rounded-xl border-2 border-dashed border-primary/40 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 hover:border-primary transition-all group">
-                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
-                            {uploadingImage ? (
-                                <span className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-                            ) : (
-                                <>
-                                    <UploadCloud className="w-8 h-8 text-primary/50 group-hover:text-primary mb-2 transition-colors" />
-                                    <span className="text-xs font-semibold text-primary/70 group-hover:text-primary">Add Image</span>
-                                </>
-                            )}
-                        </label>
-                    </div>
-                </div>
-
-                {/* Core Details */}
-                <div className="glass p-8 rounded-3xl border border-border/50 shadow-xl space-y-6">
-                    <h2 className="text-xl font-bold border-b border-border pb-2">Core Details</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Product Name</label>
-                            <input required name="name" value={form.name} onChange={handleChange} placeholder="e.g. Premium Cotton Yarn" className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Category</label>
-                            <select name="category" value={form.category} onChange={handleChange} className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all appearance-none cursor-pointer">
-                                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Description</label>
-                        <textarea required name="description" value={form.description} onChange={handleChange} rows={4} placeholder="Describe your product's quality, material, and uniqueness..." className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all resize-none" />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Base Price (₹)</label>
-                            <input required name="price" type="number" value={form.price} onChange={handleChange} placeholder="0.00" className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Unit</label>
-                            <input required name="unit" value={form.unit} onChange={handleChange} placeholder="units/kg/meters" className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Min Order (MOQ)</label>
-                            <input required name="moq" type="number" value={form.moq} onChange={handleChange} className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Lead Time (Days)</label>
-                            <input required name="leadTime" type="number" value={form.leadTime} onChange={handleChange} className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all" />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Variations */}
-                <div className="glass p-8 rounded-3xl border border-border/50 shadow-xl space-y-6">
-                    <div className="flex items-center justify-between border-b border-border pb-2">
-                        <h2 className="text-xl font-bold flex items-center gap-2">Variations <span className="text-xs font-normal opacity-50 bg-secondary px-2 py-1 rounded-full">Optional</span></h2>
-                        <button type="button" onClick={addVariant} className="text-sm text-primary font-bold flex items-center gap-1 hover:brightness-110 transition-all">
-                            <Plus size={16} /> Add Variant
-                        </button>
-                    </div>
-
-                    {variants.length === 0 ? (
-                        <p className="text-center py-4 text-muted-foreground italic text-sm">No variations added. The product defaults to a single item.</p>
-                    ) : (
-                        <div className="space-y-4">
-                            {variants.map((variant, index) => (
-                                <div key={index} className="flex flex-wrap md:flex-nowrap items-center gap-4 p-4 rounded-2xl bg-secondary/20 border border-border/50 hover:border-primary/30 transition-all group">
-                                    <div className="flex-1 space-y-1">
-                                        <label className="text-[10px] uppercase font-bold opacity-60 ml-1">Variant Name</label>
-                                        <input placeholder="e.g. Size M, Red" required value={variant.name} onChange={(e) => handleVariantChange(index, 'name', e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:border-primary outline-none" />
-                                    </div>
-                                    <div className="w-full md:w-32 space-y-1">
-                                        <label className="text-[10px] uppercase font-bold opacity-60 ml-1">SKU</label>
-                                        <input placeholder="Optional" value={variant.sku} onChange={(e) => handleVariantChange(index, 'sku', e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:border-primary outline-none" />
-                                    </div>
-                                    <div className="w-full md:w-32 space-y-1">
-                                        <label className="text-[10px] uppercase font-bold opacity-60 ml-1">Price Override (₹)</label>
-                                        <input type="number" placeholder="Optional" value={variant.price} onChange={(e) => handleVariantChange(index, 'price', e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:border-primary outline-none" />
-                                    </div>
-                                    <div className="w-full md:w-24 space-y-1">
-                                        <label className="text-[10px] uppercase font-bold opacity-60 ml-1">Stock</label>
-                                        <input type="number" required value={variant.stock} onChange={(e) => handleVariantChange(index, 'stock', e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:border-primary outline-none" />
-                                    </div>
-                                    <button type="button" onClick={() => removeVariant(index)} className="mt-5 p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors" title="Remove Variation">
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {error && <p className="text-destructive font-bold text-center bg-destructive/10 p-3 rounded-lg border border-destructive/20 animate-in zoom-in">{error}</p>}
-
-                <div className="flex gap-4 pt-4">
-                    <button type="button" onClick={() => router.back()} className="flex-1 py-4 rounded-xl bg-secondary font-bold hover:bg-secondary/80 transition-all border border-border">
-                        Cancel Let Me Re-Think
-                    </button>
-                    <button disabled={loading} type="submit" className="flex-[2] py-4 rounded-xl premium-gradient text-white font-black shadow-xl hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50">
-                        {loading ? "Publishing Catalog..." : "Submit Product Request"}
-                    </button>
-                </div>
-            </form>
+  return (
+    <DashboardLayout title="Add Product">
+      <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+        <div>
+          <Link href="/dashboard/supplier/products" className="inline-flex items-center gap-1 text-sm text-[#6B7280] hover:text-[#0D9373] transition-colors mb-4">
+            <ArrowLeft className="w-4 h-4" /> Back to Products
+          </Link>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold text-[#0F1117] mb-1">Add New Product</h1>
+          <p className="text-sm text-[#6B7280]">Add details, images, and variations for your product catalogue.</p>
         </div>
-    );
+
+        {error && <AlertBanner type="error" message={error} onClose={() => setError('')} />}
+
+        {/* Images */}
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6">
+          <h3 className="font-semibold text-[#0F1117] mb-4 flex items-center gap-2"><UploadCloud className="w-4 h-4 text-[#6B7280]" /> Product Images</h3>
+          <div className="flex flex-wrap gap-3">
+            {images.map((img, i) => (
+              <div key={i} className="relative w-32 h-32 rounded-xl overflow-hidden border border-[#E5E7EB] group">
+                <img src={img} alt="" className="w-full h-full object-cover" />
+                <button onClick={() => removeImage(i)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
+              </div>
+            ))}
+            <label className={`w-32 h-32 rounded-xl border-2 border-dashed border-[#E5E7EB] hover:border-[#0D9373] flex flex-col items-center justify-center cursor-pointer transition-colors ${uploadingImage ? 'opacity-50' : ''}`}>
+              <UploadCloud className="w-6 h-6 text-[#9CA3AF] mb-1" />
+              <span className="text-[10px] text-[#9CA3AF] font-semibold">{uploadingImage ? 'Uploading...' : 'Add Image'}</span>
+              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
+            </label>
+          </div>
+        </div>
+
+        {/* Core Details */}
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
+          <h3 className="font-semibold text-[#0F1117] mb-2">Core Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Product Name *</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Product name" className={inputCls} /></div>
+            <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Category</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls}>
+                <option value="">Select category</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Description</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} placeholder="Describe your product..." className={inputCls} /></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Price ₹ *</label><input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="100" className={inputCls} /></div>
+            <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Unit</label><input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="units" className={inputCls} /></div>
+            <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">MOQ</label><input type="number" value={moq} onChange={(e) => setMoq(e.target.value)} placeholder="10" className={inputCls} /></div>
+            <div><label className="block text-xs font-semibold text-[#374151] mb-1.5">Lead Time (days)</label><input type="number" value={leadTime} onChange={(e) => setLeadTime(e.target.value)} placeholder="7" className={inputCls} /></div>
+          </div>
+        </div>
+
+        {/* Variants */}
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-[#0F1117] flex items-center gap-2">Variations <span className="text-[10px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-full px-2 py-0.5 text-[#6B7280] font-bold">Optional</span></h3>
+            <button onClick={addVariant} className="text-xs font-semibold text-[#0D9373] hover:underline flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add Variant</button>
+          </div>
+          {variants.length === 0 ? (
+            <p className="text-sm text-[#9CA3AF] italic">No variations added. The product defaults to a single item.</p>
+          ) : (
+            <div className="space-y-3">
+              {variants.map((v, i) => (
+                <div key={i} className="grid grid-cols-5 gap-3 bg-[#F9FAFB] rounded-xl p-4 items-end">
+                  <div><label className="block text-[10px] font-bold text-[#6B7280] uppercase mb-1">Name</label><input type="text" value={v.name} onChange={(e) => updateVariant(i, 'name', e.target.value)} placeholder="Size M" className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:border-[#0D9373] outline-none" /></div>
+                  <div><label className="block text-[10px] font-bold text-[#6B7280] uppercase mb-1">SKU</label><input type="text" value={v.sku} onChange={(e) => updateVariant(i, 'sku', e.target.value)} placeholder="SKU-001" className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:border-[#0D9373] outline-none" /></div>
+                  <div><label className="block text-[10px] font-bold text-[#6B7280] uppercase mb-1">Price ₹</label><input type="number" value={v.price} onChange={(e) => updateVariant(i, 'price', e.target.value)} placeholder="—" className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:border-[#0D9373] outline-none" /></div>
+                  <div><label className="block text-[10px] font-bold text-[#6B7280] uppercase mb-1">Stock</label><input type="number" value={v.stock} onChange={(e) => updateVariant(i, 'stock', e.target.value)} placeholder="100" className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:border-[#0D9373] outline-none" /></div>
+                  <button onClick={() => removeVariant(i)} className="p-2 text-red-400 hover:text-red-600 transition-colors self-end"><Trash2 className="w-4 h-4" /></button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-4">
+          <button onClick={() => router.push('/dashboard/supplier/products')} className="flex-1 py-3 rounded-full border border-[#E5E7EB] text-sm font-semibold text-[#374151] hover:border-[#0D9373] hover:text-[#0D9373] transition-all">Cancel</button>
+          <button onClick={handleSubmit} disabled={loading} className="flex-[2] py-3 rounded-full bg-[#0D9373] text-white font-semibold text-sm hover:bg-[#0A7A61] transition-all hover:shadow-xl hover:shadow-[#0D9373]/20 disabled:opacity-50">
+            {loading ? 'Submitting...' : 'Submit Product Request'}
+          </button>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
 }
