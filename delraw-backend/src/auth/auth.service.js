@@ -30,7 +30,7 @@ export class AuthService {
     /**
      * Hashes a sensitive token using Bcrypt.
      */
-    private async hashToken(token) {
+    async hashToken(token) {
         return bcrypt.hash(token, 10);
     }
 
@@ -225,7 +225,7 @@ export class AuthService {
     /**
      * Internal helper to generate a pair of JWTs (Access + Refresh).
      */
-    private async generateTokenResponse(userId, email, role) {
+    async generateTokenResponse(userId, email, role) {
         const payload = { sub: userId, email, role };
         const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
 

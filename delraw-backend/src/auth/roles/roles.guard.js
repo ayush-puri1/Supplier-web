@@ -11,7 +11,7 @@ import { Reflector } from '@nestjs/core';
  * Relies on the @Roles decorator to fetch metadata.
  */
 @Injectable()
-export class RolesGuard implements CanActivate {
+export class RolesGuard {
   /**
    * @param {import('@nestjs/core').Reflector} reflector
    */
