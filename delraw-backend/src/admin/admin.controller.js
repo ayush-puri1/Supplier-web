@@ -10,11 +10,14 @@ import {
     Delete,
     Request,
     Bind,
+    Inject,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../auth/roles/roles.decorator';
 import { RolesGuard } from '../auth/roles/roles.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { AdminService } from './admin.service';
+import { SessionService } from '../auth/session.service';
 
 /**
  * Controller providing the platform's administrative and super-administrative interface.
@@ -27,10 +30,13 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 @ApiBearerAuth()
 export class AdminController {
     /**
-     * @param {import('./admin.service').AdminService} adminService
-     * @param {import('../auth/session.service').SessionService} sessionService
+     * @param {AdminService} adminService
+     * @param {SessionService} sessionService
      */
-    constructor(adminService, sessionService) {
+    constructor(
+        @Inject(AdminService) adminService,
+        @Inject(SessionService) sessionService
+    ) {
         this.adminService = adminService;
         this.sessionService = sessionService;
     }

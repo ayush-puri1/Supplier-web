@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { AwsService } from '../aws/aws.service';
 
 /**
  * Service to handle product lifecycle management for suppliers.
@@ -8,10 +10,13 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 @Injectable()
 export class ProductsService {
     /**
-     * @param {import('../prisma/prisma.service').PrismaService} prisma
-     * @param {import('../aws/aws.service').AwsService} awsService
+     * @param {PrismaService} prisma
+     * @param {AwsService} awsService
      */
-    constructor(prisma, awsService) {
+    constructor(
+        @Inject(PrismaService) prisma,
+        @Inject(AwsService) awsService
+    ) {
         this.prisma = prisma;
         this.awsService = awsService;
     }

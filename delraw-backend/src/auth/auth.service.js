@@ -1,10 +1,16 @@
 import {
     Injectable,
+    Inject,
     BadRequestException,
     UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
+import { AuditService } from '../audit/audit.service';
+import { SessionService } from './session.service';
 
 /**
  * Service providing core authentication, registration, and session management.
@@ -13,13 +19,19 @@ import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class AuthService {
     /**
-     * @param {import('../prisma/prisma.service').PrismaService} prisma
-     * @param {import('@nestjs/jwt').JwtService} jwt
-     * @param {import('../mail/mail.service').MailService} mail
-     * @param {import('../audit/audit.service').AuditService} audit
-     * @param {import('./session.service').SessionService} sessionService
+     * @param {PrismaService} prisma
+     * @param {JwtService} jwt
+     * @param {MailService} mail
+     * @param {AuditService} audit
+     * @param {SessionService} sessionService
      */
-    constructor(prisma, jwt, mail, audit, sessionService) {
+    constructor(
+        @Inject(PrismaService) prisma,
+        @Inject(JwtService) jwt,
+        @Inject(MailService) mail,
+        @Inject(AuditService) audit,
+        @Inject(SessionService) sessionService,
+    ) {
         this.prisma = prisma;
         this.jwt = jwt;
         this.mail = mail;

@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { detectDeviceType } from '../common/utils/device.util';
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Service to manage active user sessions across multiple devices.
@@ -8,9 +9,9 @@ import { detectDeviceType } from '../common/utils/device.util';
 @Injectable()
 export class SessionService {
   /**
-   * @param {import('../prisma/prisma.service').PrismaService} prisma
+   * @param {PrismaService} prisma
    */
-  constructor(prisma) {
+  constructor(@Inject(PrismaService) prisma) {
     this.prisma = prisma;
   }
 

@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Service to manage user-related data operations, primarily for authentication 
@@ -9,7 +10,7 @@ export class UsersService {
     /**
      * @param {import('../prisma/prisma.service').PrismaService} prisma
      */
-    constructor(prisma) {
+    constructor(@Inject(PrismaService) prisma) {
         this.prisma = prisma;
     }
 

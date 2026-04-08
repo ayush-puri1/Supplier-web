@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Service to aggregate platform-wide data for admin dashboards.
@@ -6,7 +7,7 @@ import { Injectable } from '@nestjs/common';
  */
 @Injectable()
 export class AnalyticsService {
-    constructor(prisma) {
+    constructor(@Inject(PrismaService) prisma) {
         this.prisma = prisma;
     }
 

@@ -1,14 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
- * Service to handle supplier document operations, such as GST and PAN uploads.
+ * Service to manage supplier document records in the database.
+ * Does NOT handle the actual file storage (see AwsService).
  */
 @Injectable()
 export class DocumentsService {
     /**
-     * @param {import('../prisma/prisma.service').PrismaService} prisma
+     * @param {PrismaService} prisma
      */
-    constructor(prisma) {
+    constructor(@Inject(PrismaService) prisma) {
         this.prisma = prisma;
     }
 

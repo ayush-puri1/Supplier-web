@@ -1,8 +1,9 @@
-import { Bind, Controller, Post, Body, Request, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Bind, Controller, Post, Body, Request, UseGuards, UnauthorizedException, Inject } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ExtractJwt } from 'passport-jwt';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthService } from './auth.service';
 
 /**
  * Controller for public and protected authentication endpoints.
@@ -12,9 +13,9 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 @Controller('auth')
 export class AuthController {
     /**
-     * @param {import('./auth.service').AuthService} authService
+     * @param {AuthService} authService
      */
-    constructor(authService) {
+    constructor(@Inject(AuthService) authService) {
         this.authService = authService;
     }
 

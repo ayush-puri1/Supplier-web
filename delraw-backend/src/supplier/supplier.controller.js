@@ -5,7 +5,8 @@ import { Bind, Controller,
     Body,
     Req,
     Param,
-    UseGuards, } from '@nestjs/common';
+    UseGuards,
+    Inject, } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles/roles.guard';
 import { SupplierService } from './supplier.service';
@@ -17,7 +18,7 @@ import { SupplierService } from './supplier.service';
 @Controller('supplier')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class SupplierController {
-    constructor(service) {
+    constructor(@Inject(SupplierService) service) {
         this.service = service;
     }
 

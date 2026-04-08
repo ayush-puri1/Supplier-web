@@ -1,4 +1,5 @@
 import { Bind, Controller,
+    Inject,
     Get,
     Query,
     UseGuards, } from '@nestjs/common';
@@ -18,7 +19,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 @Roles('ADMIN', 'SUPER_ADMIN')
 @ApiBearerAuth()
 export class AuditController {
-    constructor(auditService) {
+    constructor(@Inject(AuditService) auditService) {
         this.auditService = auditService;
     }
 
