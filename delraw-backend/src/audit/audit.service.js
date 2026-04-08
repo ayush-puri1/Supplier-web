@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
  */
 @Injectable()
 export class AuditService {
-    constructor(prisma) {
+    constructor(@Inject(PrismaService) prisma) {
         this.prisma = prisma;
     }
 

@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
@@ -13,9 +14,9 @@ import { Reflector } from '@nestjs/core';
 @Injectable()
 export class RolesGuard {
   /**
-   * @param {import('@nestjs/core').Reflector} reflector
+   * @param {Reflector} reflector
    */
-  constructor(reflector) {
+  constructor(@Inject(Reflector) reflector) {
     this.reflector = reflector;
    }
 

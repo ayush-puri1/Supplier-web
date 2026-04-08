@@ -1,9 +1,10 @@
-import { Bind, Controller, Post, Body, Get, UseGuards, Request, Param, Patch, Delete, UseInterceptors, UploadedFile, Query } from '@nestjs/common';
+import { Bind, Controller, Post, Body, Get, UseGuards, Request, Param, Patch, Delete, UseInterceptors, UploadedFile, Query, Inject } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles/roles.guard';
 import { Roles } from '../auth/roles/roles.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ProductsService } from './products.service';
 
 /**
  * Controller for managing supplier product catalogs and images.
@@ -13,7 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @ApiBearerAuth()
 export class ProductsController {
-    constructor(productsService) {
+    constructor(@Inject(ProductsService) productsService) {
         this.productsService = productsService;
     }
 

@@ -1,9 +1,13 @@
 import {
     Injectable,
+    Inject,
     BadRequestException,
     NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
+import { MailService } from '../mail/mail.service';
 
 /**
  * Service for overseeing the entire platform.
@@ -13,11 +17,15 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AdminService {
     /**
-     * @param {import('../prisma/prisma.service').PrismaService} prisma
-     * @param {import('../audit/audit.service').AuditService} audit
-     * @param {import('../mail/mail.service').MailService} mail
+     * @param {PrismaService} prisma
+     * @param {AuditService} audit
+     * @param {MailService} mail
      */
-    constructor(prisma, audit, mail) {
+    constructor(
+        @Inject(PrismaService) prisma,
+        @Inject(AuditService) audit,
+        @Inject(MailService) mail
+    ) {
         this.prisma = prisma;
         this.audit = audit;
         this.mail = mail;

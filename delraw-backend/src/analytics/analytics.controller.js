@@ -1,7 +1,9 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Inject } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../auth/roles/roles.decorator';
 import { RolesGuard } from '../auth/roles/roles.guard';
+import { AnalyticsService } from './analytics.service';
+import { AuditService } from '../audit/audit.service';
 
 /**
  * Controller for providing dashboard data to platform administrators.
@@ -12,8 +14,8 @@ import { RolesGuard } from '../auth/roles/roles.guard';
 @Roles('ADMIN', 'SUPER_ADMIN')
 export class AnalyticsController {
     constructor(
-        analyticsService,
-        auditService
+        @Inject(AnalyticsService) analyticsService,
+        @Inject(AuditService) auditService
     ) {
         this.analyticsService = analyticsService;
         this.auditService = auditService;

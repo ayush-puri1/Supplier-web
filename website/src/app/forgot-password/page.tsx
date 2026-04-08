@@ -4,7 +4,7 @@ import React, { useState, MouseEvent } from 'react';
 import Link from 'next/link';
 import { fetchWithAuth } from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Mail, Lock, Shield, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Shield, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import AlertBanner from '@/components/ui/AlertBanner';
 import OTPInput from '@/components/ui/OTPInput';
 
@@ -14,6 +14,8 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -42,14 +44,8 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError('');
     setSuccess('');
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
+    if (newPassword !== confirmPassword) { setError('Passwords do not match'); return; }
+    if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
     setLoading(true);
     try {
       await fetchWithAuth('/auth/reset-password', {
@@ -81,13 +77,9 @@ export default function ForgotPasswordPage() {
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
 
-        body {
-          font-family: var(--font-body);
-          -webkit-font-smoothing: antialiased;
-        }
-
-        .auth-input {
+        .fp-input {
           width: 100%;
           background: rgba(255,255,255,0.04);
           border: 1px solid rgba(255,255,255,0.08);
@@ -99,13 +91,13 @@ export default function ForgotPasswordPage() {
           transition: border-color 0.2s, box-shadow 0.2s;
           padding: 13px 16px 13px 44px;
         }
-        .auth-input::placeholder { color: rgba(255,255,255,0.2); }
-        .auth-input:focus {
+        .fp-input::placeholder { color: rgba(255,255,255,0.2); }
+        .fp-input:focus {
           border-color: var(--blue-500);
           box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
         }
 
-        .auth-btn {
+        .fp-btn {
           width: 100%;
           padding: 14px;
           background: var(--blue-600);
@@ -124,239 +116,245 @@ export default function ForgotPasswordPage() {
           transition: background 0.2s, box-shadow 0.2s, opacity 0.2s;
           box-shadow: 0 0 28px rgba(37,99,235,0.4);
         }
-        .auth-btn:hover:not(:disabled) {
+        .fp-btn:hover:not(:disabled) {
           background: #1D4ED8;
           box-shadow: 0 0 40px rgba(37,99,235,0.55);
         }
-        .auth-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
+        .fp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .otp-dark input {
+          background: rgba(255,255,255,0.04) !important;
+          border: 1px solid rgba(255,255,255,0.08) !important;
+          border-radius: 12px !important;
+          color: white !important;
+          font-family: var(--font-heading) !important;
+          font-size: 20px !important;
+          font-weight: 700 !important;
+          width: 48px !important;
+          height: 56px !important;
+          text-align: center !important;
+          outline: none !important;
+          transition: border-color 0.2s, box-shadow 0.2s !important;
+        }
+        .otp-dark input:focus {
+          border-color: var(--blue-500) !important;
+          box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important;
         }
 
-        @keyframes fadeInLeft {
-          from { opacity: 0; transform: translateX(-20px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes fadeInRight {
-          from { opacity: 0; transform: translateX(20px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .anim-left  { animation: fadeInLeft  0.7s cubic-bezier(.22,1,.36,1) both; }
-        .anim-right { animation: fadeInRight 0.7s 0.1s cubic-bezier(.22,1,.36,1) both; }
-        .anim-up    { animation: fadeInUp    0.6s cubic-bezier(.22,1,.36,1) both; }
+        .anim-logo  { animation: fadeInUp 0.5s cubic-bezier(.22,1,.36,1) both; }
+        .anim-card  { animation: fadeInUp 0.6s 0.1s cubic-bezier(.22,1,.36,1) both; }
+        .anim-foot  { animation: fadeInUp 0.6s 0.2s cubic-bezier(.22,1,.36,1) both; }
+        .step-anim  { animation: fadeInUp 0.4s cubic-bezier(.22,1,.36,1) both; }
       `}</style>
 
-      <div style={{ minHeight: '100vh', display: 'flex', fontFamily: 'var(--font-body)', background: '#101014' }}>
+      <div style={{
+        minHeight: '100vh',
+        background: '#101014',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '52px 24px 40px',
+        fontFamily: 'var(--font-body)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
 
-        {/* ===== LEFT PANEL ===== */}
-        <div className="anim-left" style={{
-          display: 'none',
-          width: '48%',
-          background: 'linear-gradient(145deg, #1a3a6e 0%, #0f2147 40%, #091530 100%)',
-          position: 'relative',
-          overflow: 'hidden',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: '44px 52px',
-        }}
-          id="left-panel"
-        >
-          {/* Decorative orbs */}
-          <div style={{ position: 'absolute', top: -120, right: -120, width: 420, height: 420, background: 'rgba(37,99,235,0.18)', borderRadius: '50%', filter: 'blur(100px)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: -80, left: -80, width: 320, height: 320, background: 'rgba(37,99,235,0.1)', borderRadius: '50%', filter: 'blur(80px)', pointerEvents: 'none' }} />
-          {/* Dot grid */}
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)', backgroundSize: '36px 36px', pointerEvents: 'none' }} />
+        {/* Background glows */}
+        <div style={{ position: 'absolute', top: -180, left: '50%', transform: 'translateX(-50%)', width: 800, height: 500, background: 'rgba(37,99,235,0.06)', borderRadius: '50%', filter: 'blur(140px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -100, right: -100, width: 360, height: 360, background: 'rgba(37,99,235,0.04)', borderRadius: '50%', filter: 'blur(100px)', pointerEvents: 'none' }} />
+        {/* Dot grid */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 0)', backgroundSize: '36px 36px', pointerEvents: 'none' }} />
 
-          {/* Top: Logo */}
-          <div style={{ position: 'relative', zIndex: 2 }}>
-            <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-              <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--blue-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(37,99,235,0.6)' }}>
-                <span style={{ color: 'white', fontSize: 12, fontWeight: 900, fontFamily: 'var(--font-heading)' }}>D</span>
-              </div>
-              <div>
-                <div style={{ fontFamily: 'var(--font-heading)', fontSize: 17, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 9, fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>Supplier Excellence</div>
-              </div>
-            </Link>
-          </div>
-
-          {/* Middle: Brand Message */}
-          <div style={{ position: 'relative', zIndex: 2 }}>
-            <p style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(28px, 3.2vw, 44px)',
-              fontWeight: 400,
-              fontStyle: 'italic',
-              color: 'white',
-              lineHeight: 1.25,
-              marginBottom: 28,
-              letterSpacing: '-0.01em',
-            }}>
-              &ldquo;Security and trust are at the core of every connection.&rdquo;
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 32, height: 1, background: 'rgba(255,255,255,0.3)' }} />
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.02em' }}>Advanced Encryption Standard.</span>
+        {/* ── TOP: Logo ── */}
+        <div className="anim-logo" style={{ position: 'relative', zIndex: 1 }}>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--blue-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(37,99,235,0.55)' }}>
+              <span style={{ color: 'white', fontSize: 12, fontWeight: 900, fontFamily: 'var(--font-heading)' }}>D</span>
             </div>
-          </div>
-
-          {/* Bottom: Support Link */}
-          <div style={{ position: 'relative', zIndex: 2 }}>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.35)' }}>
-              Need help? <Link href="/support" style={{ color: 'white', fontWeight: 600, textDecoration: 'none' }}>Contact Security Team</Link>
-            </p>
-          </div>
+            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 18, fontWeight: 700, color: 'white' }}>Delraw</span>
+          </Link>
         </div>
 
-        {/* ===== RIGHT PANEL ===== */}
-        <div className="anim-right" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 28px', background: '#111116', position: 'relative' }}>
+        {/* ── MIDDLE: Card ── */}
+        <div className="anim-card" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 460 }}>
+          <div style={{
+            background: '#16161D',
+            borderRadius: 20,
+            border: '1px solid rgba(255,255,255,0.06)',
+            padding: '40px 36px 36px',
+            boxShadow: '0 40px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03)',
+          }}>
 
-          {/* Top-right corner badge */}
-          <div style={{ position: 'absolute', top: 28, right: 28, display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', borderRadius: 999, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#34D399', boxShadow: '0 0 6px rgba(52,211,153,0.8)' }} />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.35)' }}>Secure session</span>
-          </div>
-
-          <div style={{ width: '100%', maxWidth: 420 }}>
-
-            {/* Mobile logo */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40 }} id="mobile-logo">
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--blue-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.5)' }}>
-                <span style={{ color: 'white', fontSize: 11, fontWeight: 900, fontFamily: 'var(--font-heading)' }}>D</span>
-              </div>
-              <span style={{ fontFamily: 'var(--font-heading)', fontSize: 17, fontWeight: 700, color: 'white' }}>Delraw</span>
-            </div>
-
-            {step === 1 ? (
-              <div key="step-1" className="anim-up">
-                <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 30, fontWeight: 800, color: 'white', marginBottom: 8, letterSpacing: '-0.02em' }}>Forgot password?</h1>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.35)', marginBottom: 36, lineHeight: 1.6 }}>
-                  No worries, enter your email and we'll send you a 6-digit code to reset your password.
+            {/* Step 1 — Email */}
+            {step === 1 && (
+              <div className="step-anim">
+                <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 26, fontWeight: 800, color: 'white', marginBottom: 8, letterSpacing: '-0.02em', textAlign: 'center' }}>
+                  Reset your password
+                </h1>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.3)', marginBottom: 32, lineHeight: 1.65, textAlign: 'center', maxWidth: 320, margin: '0 auto 32px' }}>
+                  Enter your email address and we'll send you a secure code to regain access to your supplier portal.
                 </p>
 
-                {error && <div style={{ marginBottom: 24 }}><AlertBanner type="error" message={error} onClose={() => setError('')} /></div>}
+                {error && <div style={{ marginBottom: 20 }}><AlertBanner type="error" message={error} onClose={() => setError('')} /></div>}
 
                 <form onSubmit={handleSendCode}>
-                  <div style={{ marginBottom: 28 }}>
-                    <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
-                      Email Address
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
+                      Email
                     </label>
                     <div style={{ position: 'relative' }}>
-                      <Mail size={15} color="rgba(255,255,255,0.25)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                      <Mail size={15} color="rgba(255,255,255,0.22)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                       <input
                         type="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         placeholder="name@company.com"
                         required
-                        className="auth-input"
+                        className="fp-input"
                       />
                     </div>
                   </div>
 
-                  <button type="submit" disabled={loading} className="auth-btn">
-                    {loading ? 'Sending code…' : <>Send Reset Code <ArrowRight size={15} /></>}
+                  <button type="submit" disabled={loading} className="fp-btn">
+                    {loading ? 'Sending code…' : <>Send Code <ArrowRight size={15} /></>}
                   </button>
                 </form>
+
+                {/* Divider */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '24px 0' }}>
+                  <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+                </div>
+
+                <p style={{ textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.28)' }}>
+                  Remember your password?{' '}
+                  <Link href="/login" style={{ color: 'var(--blue-400)', fontWeight: 600, textDecoration: 'none' }}
+                    onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = 'var(--blue-300)')}
+                    onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = 'var(--blue-400)')}
+                  >Back to sign in</Link>
+                </p>
               </div>
-            ) : (
-              <div key="step-2" className="anim-up">
-                <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 30, fontWeight: 800, color: 'white', marginBottom: 8, letterSpacing: '-0.02em' }}>Reset password</h1>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.35)', marginBottom: 32, lineHeight: 1.6 }}>
-                  Enter the code we sent to <span style={{ color: 'white', fontWeight: 600 }}>{email}</span> and choose a new password.
+            )}
+
+            {/* Step 2 — OTP + New Password */}
+            {step === 2 && (
+              <div className="step-anim">
+                <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 26, fontWeight: 800, color: 'white', marginBottom: 8, letterSpacing: '-0.02em', textAlign: 'center' }}>
+                  Reset password
+                </h1>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.3)', lineHeight: 1.65, textAlign: 'center', marginBottom: 32 }}>
+                  Enter the code sent to{' '}
+                  <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{email}</span>{' '}
+                  and choose a new password.
                 </p>
 
-                {error && <div style={{ marginBottom: 24 }}><AlertBanner type="error" message={error} onClose={() => setError('')} /></div>}
+                {error && <div style={{ marginBottom: 20 }}><AlertBanner type="error" message={error} onClose={() => setError('')} /></div>}
+
                 {success && !error && (
-                  <div style={{ marginBottom: 24, padding: '12px 16px', borderRadius: 12, background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <CheckCircle2 size={16} color="#34D399" />
-                    <span style={{ fontSize: 13, color: '#34D399' }}>{success}</span>
+                  <div style={{ marginBottom: 20, padding: '12px 16px', borderRadius: 12, background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <CheckCircle2 size={15} color="#34D399" style={{ flexShrink: 0 }} />
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#34D399' }}>{success}</span>
                   </div>
                 )}
 
                 <form onSubmit={handleResetPassword}>
-                  <div style={{ marginBottom: 32 }}>
-                    <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 16, textAlign: 'center' }}>
+                  {/* OTP */}
+                  <div style={{ marginBottom: 28 }}>
+                    <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 14, textAlign: 'center' }}>
                       Verification Code
                     </label>
-                    <OTPInput value={otp} onChange={setOtp} />
+                    <div className="otp-dark">
+                      <OTPInput value={otp} onChange={setOtp} />
+                    </div>
                   </div>
 
-                  <div style={{ marginBottom: 18 }}>
-                    <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
+                  {/* New Password */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
                       New Password
                     </label>
                     <div style={{ position: 'relative' }}>
-                      <Lock size={15} color="rgba(255,255,255,0.25)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                      <Lock size={15} color="rgba(255,255,255,0.22)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                       <input
-                        type="password"
+                        type={showNew ? 'text' : 'password'}
                         value={newPassword}
                         onChange={e => setNewPassword(e.target.value)}
                         placeholder="••••••••"
                         required
-                        className="auth-input"
+                        className="fp-input"
+                        style={{ paddingRight: 44 }}
                       />
+                      <button type="button" onClick={() => setShowNew(!showNew)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                        {showNew ? <EyeOff size={15} color="rgba(255,255,255,0.25)" /> : <Eye size={15} color="rgba(255,255,255,0.25)" />}
+                      </button>
                     </div>
                   </div>
 
+                  {/* Confirm Password */}
                   <div style={{ marginBottom: 28 }}>
-                    <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
+                    <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
                       Confirm Password
                     </label>
                     <div style={{ position: 'relative' }}>
-                      <Lock size={15} color="rgba(255,255,255,0.25)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                      <Lock size={15} color="rgba(255,255,255,0.22)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                       <input
-                        type="password"
+                        type={showConfirm ? 'text' : 'password'}
                         value={confirmPassword}
                         onChange={e => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
                         required
-                        className="auth-input"
+                        className="fp-input"
+                        style={{ paddingRight: 44 }}
                       />
+                      <button type="button" onClick={() => setShowConfirm(!showConfirm)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                        {showConfirm ? <EyeOff size={15} color="rgba(255,255,255,0.25)" /> : <Eye size={15} color="rgba(255,255,255,0.25)" />}
+                      </button>
                     </div>
                   </div>
 
-                  <button type="submit" disabled={loading} className="auth-btn">
+                  <button type="submit" disabled={loading} className="fp-btn">
                     {loading ? 'Resetting password…' : <>Reset Password <ArrowRight size={15} /></>}
                   </button>
                 </form>
+
+                <p style={{ textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.28)', marginTop: 24 }}>
+                  <Link href="/login" style={{ color: 'var(--blue-400)', fontWeight: 600, textDecoration: 'none' }}
+                    onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = 'var(--blue-300)')}
+                    onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = 'var(--blue-400)')}
+                  >← Back to sign in</Link>
+                </p>
               </div>
             )}
+          </div>
 
-            {/* Back to login */}
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 28 }}>
-              Remembered your password?{' '}
-              <Link href="/login" style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: 'var(--blue-400)', textDecoration: 'none' }}
-                onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = 'var(--blue-300)')}
-                onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = 'var(--blue-400)')}
-              >
-                Back to sign in
-              </Link>
-            </p>
-
-            {/* Trust badges */}
-            <div style={{ marginTop: 52, textAlign: 'center' }}>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 9, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.15)', marginBottom: 16 }}>
-                Secure Reset Protocol
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                <Shield size={18} color="rgba(255,255,255,0.1)" />
-              </div>
-            </div>
+          {/* End-to-end encryption badge */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20 }}>
+            <Shield size={13} color="rgba(255,255,255,0.18)" />
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.18)' }}>
+              End-to-end encryption
+            </span>
           </div>
         </div>
 
-        {/* Responsive: show left panel on large screens */}
-        <style>{`
-          @media (min-width: 1024px) {
-            #left-panel { display: flex !important; }
-            #mobile-logo { display: none !important; }
-          }
-        `}</style>
+        {/* ── BOTTOM: Footer ── */}
+        <div className="anim-foot" style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.18)' }}>
+            © 2026 Delraw. All rights reserved.
+          </p>
+          <div style={{ display: 'flex', gap: 24 }}>
+            {['Privacy', 'Terms', 'Support'].map(item => (
+              <a key={item} href="#" style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.22)', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
+                onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = 'rgba(255,255,255,0.22)')}
+              >{item}</a>
+            ))}
+          </div>
+        </div>
+
       </div>
     </>
   );

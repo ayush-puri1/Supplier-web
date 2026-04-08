@@ -1,8 +1,10 @@
 import {
     Injectable,
+    Inject,
     ForbiddenException,
     NotFoundException,
 } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Service to handle supplier-specific business logic, including profile management,
@@ -13,7 +15,7 @@ export class SupplierService {
     /**
      * @param {import('../prisma/prisma.service').PrismaService} prisma
      */
-    constructor(prisma) {
+    constructor(@Inject(PrismaService) prisma) {
         this.prisma = prisma;
     }
 

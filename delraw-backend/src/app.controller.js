@@ -1,4 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Inject } from '@nestjs/common';
+import { AppService } from './app.service';
 
 /**
  * Root controller for the application.
@@ -7,9 +8,9 @@ import { Controller, Get } from '@nestjs/common';
 @Controller()
 export class AppController {
   /**
-   * @param {import('./app.service').AppService} appService
+   * @param {AppService} appService
    */
-  constructor(appService) {
+  constructor(@Inject(AppService) appService) {
     this.appService = appService;
   }
 

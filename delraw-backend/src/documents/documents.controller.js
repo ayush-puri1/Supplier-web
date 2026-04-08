@@ -1,7 +1,8 @@
-import { Controller, Post, UseGuards, UseInterceptors, UploadedFile, Body, Request, Bind } from '@nestjs/common';
+import { Controller, Post, UseGuards, UseInterceptors, UploadedFile, Body, Request, Bind, Inject } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../auth/roles/roles.decorator';
+import { DocumentsService } from './documents.service';
 
 /**
  * Controller for handling legal and business document uploads for suppliers.
@@ -9,7 +10,7 @@ import { Roles } from '../auth/roles/roles.decorator';
 @Controller('documents')
 @UseGuards(AuthGuard('jwt'))
 export class DocumentsController {
-    constructor(documentsService) {
+    constructor(@Inject(DocumentsService) documentsService) {
         this.documentsService = documentsService;
     }
 
