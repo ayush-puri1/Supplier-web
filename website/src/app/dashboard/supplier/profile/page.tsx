@@ -24,7 +24,7 @@ function Sidebar() {
     { label: 'Settings',         icon: <Settings size={16} />,        href: '/dashboard/supplier/settings',      active: false },
   ];
   return (
-    <aside style={{ width: 220, flexShrink: 0, background: '#0D0D12', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
+    <aside style={{ width: 220, flexShrink: 0, background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
         <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
           <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>D</span>
@@ -119,7 +119,7 @@ function StatusPill({ status }: { status: string }) {
 /* ════════ SECTION CARD ════════ */
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div style={{ background: '#15151C', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden' }}>
+    <div style={{ background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden' }}>
       <div style={{ padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ color: 'rgba(255,255,255,0.28)' }}>{icon}</span>
         <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.5)' }}>{title}</span>
@@ -198,19 +198,19 @@ export default function SupplierProfilePage() {
         @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Syne:wght@400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
         :root { --font-heading:'Newsreader',serif; --font-num:'Syne',sans-serif; --font-body:'DM Sans',sans-serif; }
         *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:var(--font-body); background:#0F0F14; color:white; -webkit-font-smoothing:antialiased; }
+        body { font-family:var(--font-body); background:#141414; color:white; -webkit-font-smoothing:antialiased; }
         ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
         @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         .anim-up { animation:fadeUp 0.5s cubic-bezier(.22,1,.36,1) both; }
         @keyframes spin { to{transform:rotate(360deg)} }
       `}</style>
 
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#0F0F14' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
         <Sidebar />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
           {/* Header */}
-          <header style={{ height: 54, background: '#0D0D12', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+          <header style={{ height: 54, background: '#0A0A0A', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
             <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>Business Profile</span>
             {profile && <StatusPill status={profile.status} />}
           </header>
@@ -321,8 +321,8 @@ export default function SupplierProfilePage() {
                 {/* Action buttons */}
                 {isEditable && (
                   <div style={{ display: 'flex', gap: 12 }}>
-                    <button onClick={handleSave} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 11, border: 'none', background: saving ? 'rgba(255,255,255,0.3)' : 'white', color: '#0F0F14', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: saving ? 'none' : '0 4px 18px rgba(255,255,255,0.12)', transition: 'all 0.2s' }}>
-                      {saving ? <><div style={{ width: 14, height: 14, border: '2px solid rgba(0,0,0,0.15)', borderTop: '2px solid #0F0F14', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />Saving…</> : <><Save size={14} /> Save Profile</>}
+                    <button onClick={handleSave} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 11, border: 'none', background: saving ? 'rgba(255,255,255,0.3)' : 'white', color: '#141414', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: saving ? 'none' : '0 4px 18px rgba(255,255,255,0.12)', transition: 'all 0.2s' }}>
+                      {saving ? <><div style={{ width: 14, height: 14, border: '2px solid rgba(0,0,0,0.15)', borderTop: '2px solid #141414', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />Saving…</> : <><Save size={14} /> Save Profile</>}
                     </button>
                     {profile?.status === 'DRAFT' && (
                       <button onClick={handleSubmit} disabled={saving} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 11, border: 'none', background: saving ? 'rgba(37,99,235,0.5)' : '#2563EB', color: 'white', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: saving ? 'none' : '0 0 24px rgba(37,99,235,0.4)', transition: 'all 0.2s' }}>

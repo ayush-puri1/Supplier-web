@@ -1,24 +1,95 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { fetchWithAuth } from '@/lib/api';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
-import StatusBadge from '@/components/ui/StatusBadge';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Building2 } from 'lucide-react';
 
-const STATUS_TABS = ['ALL', 'SUBMITTED', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'CONDITIONAL', 'SUSPENDED', 'DRAFT'] as const;
+/* ══════════════════════════════════════════════
+   ADMIN SIDEBAR
+══════════════════════════════════════════════ */
+function AdminSidebar() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  const navItems = [
+    { label: 'Overview', icon: <LayoutDashboard size={16} />, href: '/dashboard/admin', active: false },
+    { label: 'Analytics', icon: <BarChart3 size={16} />, href: '/dashboard/admin/analytics', active: false },
+    { label: 'Suppliers', icon: <Users size={16} />, href: '/dashboard/admin/suppliers', active: true },
+    { label: 'Products', icon: <Package size={16} />, href: '/dashboard/admin/products', active: false },
+    { label: 'Audit Logs', icon: <History size={16} />, href: '/dashboard/admin/audit-logs', active: false },
+    { label: 'Config', icon: <Shield size={16} />, href: '/dashboard/admin/config', active: false },
+  ];
+  return (
+    <aside style={{ width: 220, flexShrink: 0, background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
+        <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
+          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>D</span>
+        </div>
+        <div>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
+          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>Admin Portal</div>
+        </div>
+      </Link>
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
+        {navItems.map(item => (
+          <Link key={item.label} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 12px', borderRadius: 9, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: item.active ? 600 : 400, color: item.active ? 'white' : 'rgba(255,255,255,0.38)', background: item.active ? 'rgba(37,99,235,0.14)' : 'transparent', borderLeft: item.active ? '2px solid #60A5FA' : '2px solid transparent', transition: 'all 0.2s' }}>
+            <span style={{ color: item.active ? '#60A5FA' : 'rgba(255,255,255,0.28)', flexShrink: 0 }}>{item.icon}</span>
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
+        {user && (
+          <div style={{ padding: '8px 12px', borderRadius: 9, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 8 }}>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email || 'admin@delraw.com'}</p>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{user?.role?.replace('_', ' ') || 'ADMIN'}</p>
+          </div>
+        )}
+        <button onClick={() => { logout?.(); router.push('/login'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(248,113,113,0.65)', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(248,113,113,0.1)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+          <LogOut size={15} /> Sign Out
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function SupplierStatusBadge({ status = 'UNKNOWN', size = 'sm' }: { status?: string; size?: 'sm' | 'md' }) {
+  const getStyle = () => {
+    switch (status) {
+      case 'VERIFIED': return { dot: '#34D399', bg: 'rgba(52,211,153,0.1)', color: '#34D399', label: status };
+      case 'SUBMITTED': case 'UNDER_REVIEW': return { dot: '#FBBF24', bg: 'rgba(251,191,36,0.1)', color: '#FBBF24', label: 'PENDING' };
+      case 'REJECTED': case 'SUSPENDED': return { dot: '#F87171', bg: 'rgba(248,113,113,0.1)', color: '#F87171', label: status };
+      case 'CONDITIONAL': return { dot: '#F97316', bg: 'rgba(249,115,22,0.1)', color: '#F97316', label: status };
+      default: return { dot: '#60A5FA', bg: 'rgba(96,165,250,0.1)', color: '#60A5FA', label: status };
+    }
+  };
+  const sc = getStyle();
+  const px = size === 'md' ? '6px 14px' : '4px 10px';
+  const fs = size === 'md' ? 11 : 9;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: px, borderRadius: 999, fontFamily: "'DM Sans', sans-serif", fontSize: fs, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: sc.color, background: sc.bg }}>
+      <span style={{ width: size === 'md' ? 6 : 4, height: size === 'md' ? 6 : 4, borderRadius: '50%', background: sc.dot, boxShadow: `0 0 ${size === 'md' ? 8 : 5}px ${sc.dot}` }} />
+      {sc.label}
+    </span>
+  );
+}
+
+const STATUS_TABS = ['ALL', 'SUBMITTED', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'CONDITIONAL', 'SUSPENDED'] as const;
 
 const TRANSITION_MAP: Record<string, { label: string; status: string; color: string }[]> = {
-  SUBMITTED: [{ label: 'Start Review', status: 'UNDER_REVIEW', color: 'bg-blue-500 hover:bg-blue-600' }],
-  UNDER_REVIEW: [{ label: '✅ Verify', status: 'VERIFIED', color: 'bg-blue-500 hover:bg-blue-600' }, { label: '❌ Reject', status: 'REJECTED', color: 'bg-red-500 hover:bg-red-600' }, { label: '⚠️ Conditional', status: 'CONDITIONAL', color: 'bg-orange-500 hover:bg-orange-600' }],
-  VERIFIED: [{ label: '🚫 Suspend', status: 'SUSPENDED', color: 'bg-zinc-700 hover:bg-zinc-800' }],
-  CONDITIONAL: [{ label: '🔄 Re-Review', status: 'UNDER_REVIEW', color: 'bg-blue-500 hover:bg-blue-600' }, { label: '❌ Reject', status: 'REJECTED', color: 'bg-red-500 hover:bg-red-600' }],
-  REJECTED: [{ label: '↩️ Reset to Draft', status: 'DRAFT', color: 'bg-zinc-600 hover:bg-zinc-700' }],
-  SUSPENDED: [{ label: '🔄 Re-Review', status: 'UNDER_REVIEW', color: 'bg-blue-500 hover:bg-blue-600' }],
+  SUBMITTED: [{ label: 'Start Review', status: 'UNDER_REVIEW', color: '#3B82F6' }],
+  UNDER_REVIEW: [{ label: '✅ Verify', status: 'VERIFIED', color: '#10B981' }, { label: '❌ Reject', status: 'REJECTED', color: '#EF4444' }, { label: '⚠️ Conditional', status: 'CONDITIONAL', color: '#F59E0B' }],
+  VERIFIED: [{ label: '🚫 Suspend', status: 'SUSPENDED', color: 'rgba(255,255,255,0.2)' }],
+  CONDITIONAL: [{ label: '🔄 Re-Review', status: 'UNDER_REVIEW', color: '#3B82F6' }, { label: '❌ Reject', status: 'REJECTED', color: '#EF4444' }],
+  REJECTED: [{ label: '↩️ Reset to Draft', status: 'DRAFT', color: 'rgba(255,255,255,0.2)' }],
+  SUSPENDED: [{ label: '🔄 Re-Review', status: 'UNDER_REVIEW', color: '#3B82F6' }],
   DRAFT: [],
 };
 
 export default function AdminSuppliersPage() {
+  const router = useRouter();
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ALL');
@@ -53,80 +124,207 @@ export default function AdminSuppliersPage() {
   };
 
   return (
-    <DashboardLayout title="Suppliers">
-      <div className="space-y-6 animate-fade-in-up">
-        <div>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold text-[#0F1117] mb-1">Supplier Verification</h1>
-          <p className="text-sm text-[#6B7280]">Review registrations, manage compliance, and control platform trust.</p>
-        </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Syne:wght@400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+        :root { --font-heading:'Newsreader',serif; --font-num:'Syne',sans-serif; --font-body:'DM Sans',sans-serif; }
+        *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:var(--font-body); background:#141414; color:white; -webkit-font-smoothing:antialiased; }
+        ::-webkit-scrollbar{width:4px; height:4px;} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+        
+        .tab-button { padding: 10px 20px; border-radius: 999px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+        .tab-button:hover { background: rgba(255,255,255,0.08); color: white; }
+        .tab-button.active { background: #2563EB; border-color: #3B82F6; color: white; box-shadow: 0 0 16px rgba(37,99,235,0.4); }
+        
+        .list-row { transition: all 0.2s; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
+        .list-row:hover { background: rgba(255,255,255,0.02); }
+        .list-row.selected { background: rgba(37,99,235,0.05); }
+        
+        .action-button { padding: 10px 20px; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; color: white; border: none; cursor: pointer; transition: all 0.2s; }
+        .action-button:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+        .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+      `}</style>
+      
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
+        <AdminSidebar />
 
-        <div className="flex flex-wrap gap-2">
-          {STATUS_TABS.map((tab) => (
-            <button key={tab} onClick={() => { setActiveTab(tab); setSelected(null); }} className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${activeTab === tab ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-lg shadow-[#2563EB]/20' : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-[#F9FAFB] hover:text-[#0F1117]'}`}>
-              {tab.replace('_', ' ')}
-            </button>
-          ))}
-        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          {/* HEADER */}
+          <header style={{ position: 'relative', height: 54, background: '#0A0A0A', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+             {/* CENTERED ADMIN TEXT */}
+             <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 800, letterSpacing: '0.15em', color: 'white' }}>ADMIN</div>
+             <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.3)'}>
+               <ArrowLeft size={14} /> Back
+             </button>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+               <Search size={14} color="rgba(255,255,255,0.3)" />
+               <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)' }}>Supplier Management</span>
+             </div>
+          </header>
 
-        {loading ? <div className="text-center py-20"><LoadingSpinner /></div> : (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <div className="xl:col-span-2">
-              {suppliers.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-[#E5E7EB] p-12 text-center text-sm text-[#9CA3AF] italic">No suppliers found with status: {activeTab}</div>
-              ) : (
-                <div className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden">
-                  <table className="w-full text-left">
-                    <thead><tr className="bg-[#F9FAFB] text-[10px] uppercase tracking-wider font-bold text-[#6B7280]"><th className="px-6 py-4">Company</th><th className="px-6 py-4">Status</th><th className="px-6 py-4">Trust</th><th className="px-6 py-4">Products</th></tr></thead>
-                    <tbody className="divide-y divide-[#E5E7EB]/50">
-                      {suppliers.map((s) => (
-                        <tr key={s.id} onClick={() => { setSelected(s); setInternalNote(s.internalNotes || ''); }} className={`hover:bg-[#F9FAFB] transition-colors cursor-pointer ${selected?.id === s.id ? 'bg-[#ECFDF5]/50' : ''}`}>
-                          <td className="px-6 py-4"><p className="text-sm font-semibold">{s.companyName}</p><p className="text-[10px] text-[#9CA3AF]">{s.user?.email}</p></td>
-                          <td className="px-6 py-4"><StatusBadge status={s.status} /></td>
-                          <td className="px-6 py-4"><div className="flex items-center gap-2"><div className="w-12 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden"><div className="h-full bg-[#2563EB]" style={{ width: `${s.trustScore || 0}%` }} /></div><span className="text-xs font-bold">{s.trustScore ?? '—'}</span></div></td>
-                          <td className="px-6 py-4 text-sm font-semibold">{s._count?.products || 0}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+              
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+                <div>
+                  <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 700, color: 'white', letterSpacing: '-0.02em', marginBottom: 4 }}>Supplier Verification</h1>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Review registrations, manage compliance, and control platform trust.</p>
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div>
-              {selected ? (
-                <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] sticky top-24 animate-scale-in space-y-6">
+              {/* TABS */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
+                {STATUS_TABS.map(tab => (
+                  <button key={tab} className={`tab-button ${activeTab === tab ? 'active' : ''}`} onClick={() => { setActiveTab(tab); setSelected(null); }}>
+                    {tab.replace(/_/g, ' ')}
+                  </button>
+                ))}
+              </div>
+
+              {loading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
+                  <div style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid #3B82F6', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 32 }}>
+                  
+                  {/* MASTER LIST */}
                   <div>
-                    <h3 className="text-xl font-bold text-[#0F1117] mb-1">{selected.companyName}</h3>
-                    <p className="text-[10px] text-[#9CA3AF]">ID: {selected.id}</p>
-                    <div className="mt-2"><StatusBadge status={selected.status} size="md" /></div>
-                    {selected.status === 'REJECTED' && selected.rejectionReason && (<div className="mt-4 p-4 rounded-xl bg-red-50 border border-red-200"><p className="text-[10px] font-bold uppercase text-red-500 mb-1">Rejection Reason</p><p className="text-sm text-red-700 italic">&ldquo;{selected.rejectionReason}&rdquo;</p></div>)}
+                    {suppliers.length === 0 ? (
+                      <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: '60px 20px', textAlign: 'center' }}>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No suppliers found with status: {activeTab}</p>
+                      </div>
+                    ) : (
+                      <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Company</th>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Trust</th>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Products</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(activeTab === 'ALL' ? suppliers : suppliers.filter(s => s.status === activeTab)).map(s => (
+                              <tr key={s.id} onClick={() => { setSelected(s); setInternalNote(s.internalNotes || ''); }} className={`list-row ${selected?.id === s.id ? 'selected' : ''}`}>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                    <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <Building2 size={16} color="rgba(255,255,255,0.2)" />
+                                    </div>
+                                    <div>
+                                      <Link href={`/dashboard/admin/suppliers/${s.id}`} style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'white', marginBottom: 2, textDecoration: 'none' }}>{s.companyName}</Link>
+                                      <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{s.user?.email}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <SupplierStatusBadge status={s.status} />
+                                </td>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{ width: 60, height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
+                                      <div style={{ height: '100%', background: '#2563EB', width: `${s.trustScore || 0}%` }} />
+                                    </div>
+                                    <span style={{ fontFamily: 'var(--font-num)', fontSize: 13, fontWeight: 700, color: 'white' }}>{s.trustScore ?? '—'}</span>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '16px 20px', fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 600, color: 'white' }}>{s._count?.products || 0}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
 
-                  <section><p className="text-xs font-bold uppercase text-[#6B7280] mb-3 tracking-widest">Actions</p>
-                    <div className="flex flex-wrap gap-2">
-                      {(TRANSITION_MAP[selected.status] || []).map((t) => (<button key={t.status} disabled={actionLoading} onClick={() => handleUpdateStatus(selected.id, t.status)} className={`px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 ${t.color}`}>{t.label}</button>))}
-                      {(TRANSITION_MAP[selected.status] || []).length === 0 && <p className="text-xs text-[#9CA3AF] italic">No actions available.</p>}
-                    </div>
-                  </section>
+                  {/* DETAIL VIEW */}
+                  <div>
+                    {selected ? (
+                      <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: 24, position: 'sticky', top: 32 }}>
+                        
+                        <div style={{ marginBottom: 24 }}>
+                          <Link href={`/dashboard/admin/suppliers/${selected.id}`} style={{ textDecoration: 'none' }}>
+                            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 700, color: 'white', marginBottom: 6 }}>{selected.companyName}</h3>
+                          </Link>
+                          <p style={{ fontFamily: 'var(--font-num)', fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>ID: {selected.id}</p>
+                          <SupplierStatusBadge status={selected.status} size="md" />
+                          
+                          {selected.status === 'REJECTED' && selected.rejectionReason && (
+                            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                              <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Rejection Reason</p>
+                              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#FCA5A5', fontStyle: 'italic' }}>&ldquo;{selected.rejectionReason}&rdquo;</p>
+                            </div>
+                          )}
+                        </div>
 
-                  <section className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]"><p className="text-xs font-bold mb-3 uppercase tracking-widest text-[#6B7280]">Business Details</p>
-                    <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-xs">
-                      {[['GST', selected.gstNumber], ['PAN', selected.panNumber], ['City', selected.city], ['Country', selected.country], ['Est.', selected.yearEstablished], ['Workforce', selected.workforceSize], ['Capacity', `${selected.monthlyCapacity}/mo`], ['MOQ', selected.moq], ['Lead Time', `${selected.leadTimeDays}d`], ['Response', `${selected.responseTimeHr}h`]].map(([label, val]) => (<div key={label as string}><p className="text-[10px] opacity-50 font-bold uppercase">{label}</p><p className="font-medium">{val || 'N/A'}</p></div>))}
-                    </div>
-                  </section>
+                        <div style={{ paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.05)', marginBottom: 24 }}>
+                           <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Workflow Actions</p>
+                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                             {(TRANSITION_MAP[selected.status] || []).map(t => (
+                               <button key={t.status} disabled={actionLoading} onClick={() => handleUpdateStatus(selected.id, t.status)} className="action-button" style={{ background: t.color, flex: 1 }}>
+                                 {t.label}
+                               </button>
+                             ))}
+                             {(TRANSITION_MAP[selected.status] || []).length === 0 && (
+                               <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No actions available for this status.</p>
+                             )}
+                           </div>
+                        </div>
 
-                  <section><p className="text-xs font-bold uppercase text-[#6B7280] mb-3 tracking-widest">Internal Notes <span className="text-red-500">(Admin Only)</span></p>
-                    <textarea className="w-full h-28 p-4 rounded-xl bg-white border border-[#E5E7EB] focus:ring-2 focus:ring-[#2563EB]/20 outline-none text-sm resize-none" placeholder="Add compliance notes..." value={internalNote} onChange={(e) => setInternalNote(e.target.value)} />
-                    <button onClick={handleSaveNote} className="mt-2 w-full py-2 rounded-xl bg-[#ECFDF5] text-[#2563EB] border border-[#A7F3D0] text-xs font-bold hover:bg-[#2563EB] hover:text-white transition-all">Save Note</button>
-                  </section>
+                        <div style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 24 }}>
+                           <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Business Details</p>
+                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                             {[
+                               ['GST', selected.gstNumber], 
+                               ['PAN', selected.panNumber], 
+                               ['City', selected.city], 
+                               ['Country', selected.country], 
+                               ['Est.', selected.yearEstablished], 
+                               ['Workforce', selected.workforceSize], 
+                               ['Capacity', `${selected.monthlyCapacity}/mo`], 
+                               ['MOQ', selected.moq], 
+                               ['Lead Time', `${selected.leadTimeDays}d`], 
+                               ['Response', `${selected.responseTimeHr}h`]
+                             ].map(([l, v]) => (
+                               <div key={l as string}>
+                                 <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{l}</p>
+                                 <p style={{ fontFamily: 'var(--font-num)', fontSize: 13, fontWeight: 600, color: 'white' }}>{v || 'N/A'}</p>
+                               </div>
+                             ))}
+                           </div>
+                        </div>
+
+                        <div>
+                           <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+                             Internal Notes <span style={{ color: '#EF4444' }}>(Admin Only)</span>
+                           </p>
+                           <textarea 
+                             style={{ width: '100%', height: 120, padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', color: 'white', fontFamily: 'var(--font-body)', fontSize: 13, resize: 'none', outline: 'none' }}
+                             placeholder="Add compliance notes..." 
+                             value={internalNote} 
+                             onChange={(e) => setInternalNote(e.target.value)} 
+                           />
+                           <button onClick={handleSaveNote} style={{ marginTop: 12, width: '100%', padding: '12px', borderRadius: 12, background: 'rgba(37,99,235,0.1)', color: '#3B82F6', border: '1px solid rgba(37,99,235,0.2)', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background='#2563EB'; e.currentTarget.style.color='white' }} onMouseLeave={e => { e.currentTarget.style.background='rgba(37,99,235,0.1)'; e.currentTarget.style.color='#3B82F6' }}>
+                             Save Note
+                           </button>
+                        </div>
+
+                      </div>
+                    ) : (
+                      <div style={{ background: 'rgba(255,255,255,0.01)', borderRadius: 16, border: '2px dashed rgba(255,255,255,0.05)', height: '100%', minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, textAlign: 'center', position: 'sticky', top: 32 }}>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.3)' }}>Select a supplier from the list to view details and take action.</p>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
-              ) : (
-                <div className="h-80 flex items-center justify-center p-12 text-center bg-white rounded-2xl border-2 border-dashed border-[#E5E7EB] text-[#9CA3AF] italic text-sm">Select a supplier from the table to view details and take action.</div>
               )}
             </div>
           </div>
-        )}
+        </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }
