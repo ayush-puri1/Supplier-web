@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, CheckCircle, XCircle, FileText, Download, Shield, Building2, MapPin, Globe, LayoutDashboard, Users, Package, LogOut, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, FileText, Download, Shield, Building2, MapPin, Globe, LayoutDashboard, Users, Package, LogOut, CheckCircle2 , Crown } from 'lucide-react';
 
 /* ══════════════════════════════════════════════
    ADMIN SIDEBAR

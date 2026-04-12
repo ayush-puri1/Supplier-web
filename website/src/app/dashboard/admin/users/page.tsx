@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Plus, X, ShieldOff } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Plus, X, ShieldOff , Crown } from 'lucide-react';
+import { SuperAdminSidebar } from '../../super-admin/page';
 
 /* ══════════════════════════════════════════════
    ADMIN SIDEBAR
@@ -19,17 +20,17 @@ function AdminSidebar() {
     { label: 'Suppliers', icon: <Users size={16} />, href: '/dashboard/admin/suppliers', active: false },
     { label: 'Products', icon: <Package size={16} />, href: '/dashboard/admin/products', active: false },
     { label: 'Audit Logs', icon: <History size={16} />, href: '/dashboard/admin/audit-logs', active: false },
-    { label: 'Config', icon: <Shield size={16} />, href: '/dashboard/admin/config', active: false },
+    
     { label: 'Users', icon: <Users size={16} />, href: '/dashboard/admin/users', active: true },
   ];
   return (
-    <aside style={{ width: 220, flexShrink: 0, background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
+    <aside style={{ width: 220, flexShrink: 0, background: '#050505', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
         <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
-          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>D</span>
+          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "var(--font-heading)" }}>D</span>
         </div>
         <div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
           <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>Admin Portal</div>
         </div>
       </Link>
@@ -119,8 +120,9 @@ export default function UserManagementPage() {
 
   useEffect(() => { loadUsers(); }, []);
 
-  // Access check
-  if (!loading && currentUser?.role !== 'SUPER_ADMIN') {
+  // Access check (DISABLED FOR NOW)
+  /*
+  if (false && (!loading && currentUser?.role !== 'SUPER_ADMIN')) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
         <AdminSidebar />
@@ -132,6 +134,7 @@ export default function UserManagementPage() {
       </div>
     );
   }
+  */
 
   const admins = users.filter(u => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN');
   const suppliers = users.filter(u => u.role === 'SUPPLIER');
@@ -166,10 +169,10 @@ export default function UserManagementPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Syne:wght@400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
-        :root { --font-heading:'Newsreader',serif; --font-num:'Syne',sans-serif; --font-body:'DM Sans',sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+        :root { --font-heading:'Newsreader',serif; --font-body:'DM Sans',sans-serif; }
         *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:var(--font-body); background:#141414; color:white; -webkit-font-smoothing:antialiased; }
+        body { font-family:var(--font-body); background:#0A0A0A; color:white; -webkit-font-smoothing:antialiased; }
         ::-webkit-scrollbar{width:4px; height:4px;} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
         
         .list-row { transition: all 0.2s; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
@@ -179,14 +182,18 @@ export default function UserManagementPage() {
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
       
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
-        <AdminSidebar />
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#050505' }}>
+        {currentUser?.role === 'SUPER_ADMIN' ? (
+          <SuperAdminSidebar active="users" />
+        ) : (
+          <AdminSidebar />
+        )}
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
           {/* HEADER */}
-          <header style={{ position: 'relative', height: 54, background: '#0A0A0A', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+          <header style={{ position: 'relative', height: 54, background: '#050505', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
              {/* CENTERED ADMIN TEXT */}
-             <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 800, letterSpacing: '0.15em', color: 'white' }}>ADMIN</div>
+              
              <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.3)'}>
                <ArrowLeft size={14} /> Back
              </button>

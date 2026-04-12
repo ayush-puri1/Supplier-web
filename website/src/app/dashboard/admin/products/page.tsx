@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Crown } from 'lucide-react';
+import { SuperAdminSidebar } from '../../super-admin/page';
 
 /* ══════════════════════════════════════════════
    ADMIN SIDEBAR
@@ -19,16 +20,16 @@ function AdminSidebar() {
     { label: 'Suppliers', icon: <Users size={16} />, href: '/dashboard/admin/suppliers', active: false },
     { label: 'Products', icon: <Package size={16} />, href: '/dashboard/admin/products', active: true },
     { label: 'Audit Logs', icon: <History size={16} />, href: '/dashboard/admin/audit-logs', active: false },
-    { label: 'Config', icon: <Shield size={16} />, href: '/dashboard/admin/config', active: false },
+
   ];
   return (
-    <aside style={{ width: 220, flexShrink: 0, background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
+    <aside style={{ width: 220, flexShrink: 0, background: '#050505', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
         <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
-          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>D</span>
+          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "var(--font-heading)" }}>D</span>
         </div>
         <div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
           <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>Admin Portal</div>
         </div>
       </Link>
@@ -47,7 +48,7 @@ function AdminSidebar() {
             <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{user?.role?.replace('_', ' ') || 'ADMIN'}</p>
           </div>
         )}
-        <button onClick={() => { logout?.(); router.push('/login'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(248,113,113,0.65)', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(248,113,113,0.1)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+        <button onClick={() => { logout?.(); router.push('/login'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(248,113,113,0.65)', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.1)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
           <LogOut size={15} /> Sign Out
         </button>
       </div>
@@ -65,13 +66,13 @@ function ProductStatusBadge({ status = 'UNKNOWN', size = 'sm' }: { status?: stri
     UNKNOWN: { bg: 'rgba(255, 255, 255, 0.05)', color: 'rgba(255,255,255,0.5)', border: 'rgba(255, 255, 255, 0.1)' },
   };
   const config = configs[status] || configs.UNKNOWN;
-  
+
   return (
-    <span style={{ 
-      display: 'inline-flex', padding: size === 'md' ? '6px 14px' : '4px 10px', 
-      borderRadius: 6, background: config.bg, border: `1px solid ${config.border}`, 
-      color: config.color, fontFamily: 'var(--font-body)', fontSize: size === 'md' ? 12 : 10, 
-      fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' 
+    <span style={{
+      display: 'inline-flex', padding: size === 'md' ? '6px 14px' : '4px 10px',
+      borderRadius: 6, background: config.bg, border: `1px solid ${config.border}`,
+      color: config.color, fontFamily: 'var(--font-body)', fontSize: size === 'md' ? 12 : 10,
+      fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase'
     }}>
       {status.replace(/_/g, ' ')}
     </span>
@@ -89,6 +90,7 @@ const TRANSITION_MAP: Record<string, { label: string; status: string; color: str
 
 export default function AdminProductsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ALL');
@@ -117,10 +119,10 @@ export default function AdminProductsPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Syne:wght@400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
-        :root { --font-heading:'Newsreader',serif; --font-num:'Syne',sans-serif; --font-body:'DM Sans',sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+        :root { --font-heading:'Newsreader',serif; --font-body:'DM Sans',sans-serif; }
         *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:var(--font-body); background:#141414; color:white; -webkit-font-smoothing:antialiased; }
+        body { font-family:var(--font-body); background:#0A0A0A; color:white; -webkit-font-smoothing:antialiased; }
         ::-webkit-scrollbar{width:4px; height:4px;} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
         
         .tab-button { padding: 10px 20px; border-radius: 999px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
@@ -135,27 +137,31 @@ export default function AdminProductsPage() {
         .action-button:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
         .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
-      
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
-        <AdminSidebar />
+
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#050505' }}>
+        {user?.role === 'SUPER_ADMIN' ? (
+          <SuperAdminSidebar active="products" />
+        ) : (
+          <AdminSidebar />
+        )}
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
           {/* HEADER */}
-          <header style={{ position: 'relative', height: 54, background: '#0A0A0A', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
-             {/* CENTERED ADMIN TEXT */}
-             <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 800, letterSpacing: '0.15em', color: 'white' }}>ADMIN</div>
-             <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.3)'}>
-               <ArrowLeft size={14} /> Back
-             </button>
-             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-               <Search size={14} color="rgba(255,255,255,0.3)" />
-               <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)' }}>Product Database</span>
-             </div>
+          <header style={{ position: 'relative', height: 54, background: '#050505', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+            {/* CENTERED ADMIN TEXT */}
+
+            <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}>
+              <ArrowLeft size={14} /> Back
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Search size={14} color="rgba(255,255,255,0.3)" />
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)' }}>Product Database</span>
+            </div>
           </header>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
             <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-              
+
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
                 <div>
                   <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 700, color: 'white', letterSpacing: '-0.02em', marginBottom: 4 }}>Product Moderation</h1>
@@ -178,7 +184,7 @@ export default function AdminProductsPage() {
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 32 }}>
-                  
+
                   {/* MASTER LIST */}
                   <div>
                     {products.length === 0 ? (
@@ -242,12 +248,12 @@ export default function AdminProductsPage() {
                             ))}
                           </div>
                         )}
-                        
+
                         <div style={{ marginBottom: 24 }}>
                           <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 700, color: 'white', marginBottom: 6 }}>{selected.name}</h3>
                           <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#60A5FA', marginBottom: 12 }}>{selected.supplier?.companyName}</p>
                           <ProductStatusBadge status={selected.status} size="md" />
-                          
+
                           {selected.status === 'REJECTED' && selected.rejectionReason && (
                             <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
                               <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Rejection Reason</p>
@@ -264,20 +270,20 @@ export default function AdminProductsPage() {
                         )}
 
                         <div style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 24 }}>
-                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                             {[
-                               ['Price', `₹${selected.price?.toLocaleString() ?? '—'}`],
-                               ['Unit', selected.unit],
-                               ['MOQ', selected.moq],
-                               ['Lead Time', `${selected.leadTime}d`],
-                               ['Category', selected.category]
-                             ].map(([l, v]) => (
-                               <div key={l as string}>
-                                 <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{l}</p>
-                                 <p style={{ fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 600, color: 'white' }}>{v || 'N/A'}</p>
-                               </div>
-                             ))}
-                           </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                            {[
+                              ['Price', `₹${selected.price?.toLocaleString() ?? '—'}`],
+                              ['Unit', selected.unit],
+                              ['MOQ', selected.moq],
+                              ['Lead Time', `${selected.leadTime}d`],
+                              ['Category', selected.category]
+                            ].map(([l, v]) => (
+                              <div key={l as string}>
+                                <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{l}</p>
+                                <p style={{ fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 600, color: 'white' }}>{v || 'N/A'}</p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
 
                         {selected.variants?.length > 0 && (
@@ -286,14 +292,14 @@ export default function AdminProductsPage() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                               {selected.variants.map((v: any) => (
                                 <div key={v.id} style={{ padding: '12px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                   <div>
-                                     <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: 'white' }}>{v.name}</p>
-                                     {v.sku && <p style={{ fontFamily: 'var(--font-num)', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>SKU: {v.sku}</p>}
-                                   </div>
-                                   <div style={{ textAlign: 'right' }}>
-                                     {v.price && <p style={{ fontFamily: 'var(--font-num)', fontSize: 13, fontWeight: 600, color: 'white' }}>₹{v.price.toLocaleString()}</p>}
-                                     <p style={{ fontFamily: 'var(--font-num)', fontSize: 11, color: '#34D399' }}>Stock: {v.stock}</p>
-                                   </div>
+                                  <div>
+                                    <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: 'white' }}>{v.name}</p>
+                                    {v.sku && <p style={{ fontFamily: 'var(--font-num)', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>SKU: {v.sku}</p>}
+                                  </div>
+                                  <div style={{ textAlign: 'right' }}>
+                                    {v.price && <p style={{ fontFamily: 'var(--font-num)', fontSize: 13, fontWeight: 600, color: 'white' }}>₹{v.price.toLocaleString()}</p>}
+                                    <p style={{ fontFamily: 'var(--font-num)', fontSize: 11, color: '#34D399' }}>Stock: {v.stock}</p>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -301,17 +307,17 @@ export default function AdminProductsPage() {
                         )}
 
                         <div style={{ paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                           <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Moderation Actions</p>
-                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                             {(TRANSITION_MAP[selected.status] || []).map(t => (
-                               <button key={t.status} disabled={actionLoading} onClick={() => handleUpdate(selected.id, t.status)} className="action-button" style={{ background: t.color, flex: 1 }}>
-                                 {t.label}
-                               </button>
-                             ))}
-                             {(TRANSITION_MAP[selected.status] || []).length === 0 && (
-                               <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No actions available for this status.</p>
-                             )}
-                           </div>
+                          <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Moderation Actions</p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                            {(TRANSITION_MAP[selected.status] || []).map(t => (
+                              <button key={t.status} disabled={actionLoading} onClick={() => handleUpdate(selected.id, t.status)} className="action-button" style={{ background: t.color, flex: 1 }}>
+                                {t.label}
+                              </button>
+                            ))}
+                            {(TRANSITION_MAP[selected.status] || []).length === 0 && (
+                              <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No actions available for this status.</p>
+                            )}
+                          </div>
                         </div>
 
                       </div>

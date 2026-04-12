@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Building2 } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Building2 , Crown } from 'lucide-react';
+import { SuperAdminSidebar } from '../../super-admin/page';
 
 /* ══════════════════════════════════════════════
    ADMIN SIDEBAR
@@ -19,16 +20,16 @@ function AdminSidebar() {
     { label: 'Suppliers', icon: <Users size={16} />, href: '/dashboard/admin/suppliers', active: true },
     { label: 'Products', icon: <Package size={16} />, href: '/dashboard/admin/products', active: false },
     { label: 'Audit Logs', icon: <History size={16} />, href: '/dashboard/admin/audit-logs', active: false },
-    { label: 'Config', icon: <Shield size={16} />, href: '/dashboard/admin/config', active: false },
+    
   ];
   return (
-    <aside style={{ width: 220, flexShrink: 0, background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
+    <aside style={{ width: 220, flexShrink: 0, background: '#050505', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
         <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
-          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>D</span>
+          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "var(--font-heading)" }}>D</span>
         </div>
         <div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
           <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>Admin Portal</div>
         </div>
       </Link>
@@ -90,11 +91,22 @@ const TRANSITION_MAP: Record<string, { label: string; status: string; color: str
 
 export default function AdminSuppliersPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ALL');
   const [selected, setSelected] = useState<any>(null);
   const [internalNote, setInternalNote] = useState('');
+  
+  const handleChangeRole = async (userId: string, role: string) => {
+    if (!confirm(`Change account role to ${role}?`)) return;
+    setActionLoading(true);
+    try {
+      await fetchWithAuth(`/admin/users/${userId}/role`, { method: 'PATCH', body: JSON.stringify({ role }) });
+      await loadSuppliers();
+      if (selected?.userId === userId) setSelected({ ...selected, user: { ...selected.user, role } });
+    } catch (err: any) { alert(err?.response?.data?.message || 'Failed to change role'); } finally { setActionLoading(false); }
+  };
   const [actionLoading, setActionLoading] = useState(false);
 
   const loadSuppliers = async () => {
@@ -126,10 +138,10 @@ export default function AdminSuppliersPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Syne:wght@400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
-        :root { --font-heading:'Newsreader',serif; --font-num:'Syne',sans-serif; --font-body:'DM Sans',sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+        :root { --font-heading:'Newsreader',serif; --font-body:'DM Sans',sans-serif; }
         *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:var(--font-body); background:#141414; color:white; -webkit-font-smoothing:antialiased; }
+        body { font-family:var(--font-body); background:#0A0A0A; color:white; -webkit-font-smoothing:antialiased; }
         ::-webkit-scrollbar{width:4px; height:4px;} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
         
         .tab-button { padding: 10px 20px; border-radius: 999px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
@@ -145,14 +157,18 @@ export default function AdminSuppliersPage() {
         .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
       
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
-        <AdminSidebar />
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#050505' }}>
+        {user?.role === 'SUPER_ADMIN' ? (
+          <SuperAdminSidebar active="suppliers" />
+        ) : (
+          <AdminSidebar />
+        )}
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
           {/* HEADER */}
-          <header style={{ position: 'relative', height: 54, background: '#0A0A0A', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+          <header style={{ position: 'relative', height: 54, background: '#050505', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
              {/* CENTERED ADMIN TEXT */}
-             <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 800, letterSpacing: '0.15em', color: 'white' }}>ADMIN</div>
+              
              <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.3)'}>
                <ArrowLeft size={14} /> Back
              </button>
@@ -272,6 +288,19 @@ export default function AdminSuppliersPage() {
                              )}
                            </div>
                         </div>
+
+                        {user?.role === 'SUPER_ADMIN' && selected.user && (
+                          <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)' }}>
+                            <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Account Role Management</p>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              {['SUPPLIER', 'ADMIN'].map(r => (
+                                <button key={r} disabled={actionLoading} onClick={() => handleChangeRole(selected.userId || selected.user.id, r)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: selected.user.role === r ? '1px solid #3B82F6' : '1px solid rgba(255,255,255,0.1)', background: selected.user.role === r ? 'rgba(59,130,246,0.1)' : 'transparent', color: selected.user.role === r ? '#60A5FA' : 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer' }}>
+                                  {r.replace('_', ' ')}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         <div style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 24 }}>
                            <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Business Details</p>
