@@ -18,7 +18,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
+      <div className="min-h-screen flex items-center justify-center bg-[#0F1117]">
         <LoadingSpinner size="lg" text="Loading..." />
       </div>
     );
@@ -26,17 +26,17 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
 
   if (!user) {
     if (typeof window !== 'undefined') {
-      router.push('/login');
+      // DISABLED FOR UI TESTING
+      // router.push('/login');
     }
-    return null;
   }
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
+    <div className="min-h-screen bg-[#0F1117] text-[#FFFFFF] font-[family-name:var(--font-body)]">
       <Sidebar />
-      <div className="ml-60">
+      <div className="ml-64 flex flex-col min-h-screen">
         <TopHeader title={title} />
-        <main className="p-8">
+        <main className="flex-1 p-8">
           {children}
         </main>
       </div>

@@ -35,7 +35,7 @@ export default function AuditLogsPage() {
 
   useEffect(() => { loadLogs(); }, [page, filterAction, filterEntity]);
 
-  const selectCls = "px-4 py-2.5 rounded-xl border border-[#E5E7EB] text-sm bg-white focus:border-[#0D9373] focus:ring-2 focus:ring-[#0D9373]/20 outline-none transition-all";
+  const selectCls = "px-4 py-2.5 rounded-xl border border-[#E5E7EB] text-sm bg-white focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 outline-none transition-all";
 
   return (
     <DashboardLayout title="Audit Logs">

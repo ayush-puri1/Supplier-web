@@ -82,7 +82,7 @@ export default function OnboardingForm({ profile, onComplete }: { profile?: any;
                 </div>
                 <div className="h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
                     <div 
-                        className="h-full bg-[#0D9373] rounded-full transition-all duration-500"
+                        className="h-full bg-[#2563EB] rounded-full transition-all duration-500"
                         style={{ width: `${(currentStep / 4) * 100}%` }} 
                     />
                 </div>
@@ -172,19 +172,19 @@ export default function OnboardingForm({ profile, onComplete }: { profile?: any;
                             <div className="border border-[#E5E7EB] rounded-2xl p-5 bg-[#F9FAFB]">
                                 <label className="font-medium text-[#0F1117] block mb-1">GST Certificate</label>
                                 <p className="text-xs text-[#6B7280] mb-3">Upload your official GST registration certificate.</p>
-                                <input type="file" onChange={(e) => handleFileChange(e, 'gstDoc')} className="text-sm text-[#6B7280] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ECFDF5] file:text-[#0D9373] hover:file:bg-[#D1FAE5] transition-colors cursor-pointer" />
+                                <input type="file" onChange={(e) => handleFileChange(e, 'gstDoc')} className="text-sm text-[#6B7280] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ECFDF5] file:text-[#2563EB] hover:file:bg-[#D1FAE5] transition-colors cursor-pointer" />
                             </div>
                             
                             <div className="border border-[#E5E7EB] rounded-2xl p-5 bg-[#F9FAFB]">
                                 <label className="font-medium text-[#0F1117] block mb-1">PAN Card</label>
                                 <p className="text-xs text-[#6B7280] mb-3">Upload a copy of the company or proprietor PAN card.</p>
-                                <input type="file" onChange={(e) => handleFileChange(e, 'panDoc')} className="text-sm text-[#6B7280] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ECFDF5] file:text-[#0D9373] hover:file:bg-[#D1FAE5] transition-colors cursor-pointer" />
+                                <input type="file" onChange={(e) => handleFileChange(e, 'panDoc')} className="text-sm text-[#6B7280] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ECFDF5] file:text-[#2563EB] hover:file:bg-[#D1FAE5] transition-colors cursor-pointer" />
                             </div>
 
                             <div className="border border-[#E5E7EB] rounded-2xl p-5 bg-[#F9FAFB]">
                                 <label className="font-medium text-[#0F1117] block mb-1">Business Registration</label>
                                 <p className="text-xs text-[#6B7280] mb-3">Upload Certificate of Incorporation, MSME certificate, or equivalent.</p>
-                                <input type="file" onChange={(e) => handleFileChange(e, 'businessDoc')} className="text-sm text-[#6B7280] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ECFDF5] file:text-[#0D9373] hover:file:bg-[#D1FAE5] transition-colors cursor-pointer" />
+                                <input type="file" onChange={(e) => handleFileChange(e, 'businessDoc')} className="text-sm text-[#6B7280] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ECFDF5] file:text-[#2563EB] hover:file:bg-[#D1FAE5] transition-colors cursor-pointer" />
                             </div>
                         </div>
                     </div>
@@ -200,7 +200,7 @@ export default function OnboardingForm({ profile, onComplete }: { profile?: any;
                             <div className="border border-[#E5E7EB] rounded-2xl p-5">
                                 <div className="flex justify-between items-center border-b border-[#E5E7EB] pb-3 mb-3">
                                     <h3 className="font-semibold text-[#0F1117]">Business Details</h3>
-                                    <button onClick={() => setCurrentStep(1)} className="text-xs text-[#0D9373] font-medium hover:underline">Edit</button>
+                                    <button onClick={() => setCurrentStep(1)} className="text-xs text-[#2563EB] font-medium hover:underline">Edit</button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div><span className="text-[#6B7280] block text-xs">Name</span>{formData.companyName || '—'}</div>
@@ -213,7 +213,7 @@ export default function OnboardingForm({ profile, onComplete }: { profile?: any;
                             <div className="border border-[#E5E7EB] rounded-2xl p-5">
                                 <div className="flex justify-between items-center border-b border-[#E5E7EB] pb-3 mb-3">
                                     <h3 className="font-semibold text-[#0F1117]">Contact Details</h3>
-                                    <button onClick={() => setCurrentStep(2)} className="text-xs text-[#0D9373] font-medium hover:underline">Edit</button>
+                                    <button onClick={() => setCurrentStep(2)} className="text-xs text-[#2563EB] font-medium hover:underline">Edit</button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div><span className="text-[#6B7280] block text-xs">Contact</span>{formData.contactName || '—'}</div>

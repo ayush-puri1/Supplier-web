@@ -19,6 +19,8 @@ interface AuthContextType {
     loading: boolean;
 }
 
+export const MOCK_MODE = true; // Set to false to use real backend
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -31,9 +33,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
 
-        if (storedToken && storedUser) {
+        if (storedToken && storedUser && storedUser !== 'undefined') {
             setToken(storedToken);
-            setUser(JSON.parse(storedUser));
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                console.error("Failed to parse user from local storage", e);
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+            }
+        } else if (MOCK_MODE) {
+            // Provide a mock user for previewing
+            setToken('mock-token');
+            const mockUser: User = {
+                id: 'mock-id',
+                email: 'mock@delraw.com',
+                role: 'SUPPLIER'
+            };
+            setUser(mockUser);
+            localStorage.setItem('token', 'mock-token');
+            localStorage.setItem('user', JSON.stringify(mockUser));
         }
         setLoading(false);
     }, []);

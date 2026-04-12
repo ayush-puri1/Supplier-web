@@ -6,7 +6,8 @@ import { fetchWithAuth } from '@/lib/api';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { ArrowLeft, CheckCircle, XCircle, FileText, Download } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, FileText, Download, Shield, Building2, MapPin, Globe } from 'lucide-react';
+import Link from 'next/link';
 
 export default function SupplierDetailPage() {
   const { id } = useParams() as { id: string };
@@ -22,68 +23,204 @@ export default function SupplierDetailPage() {
   const handleApprove = async () => {
     if (!confirm('Approve this supplier?')) return;
     setActionLoading(true);
-    try { await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'VERIFIED' }) }); router.push('/dashboard/admin/suppliers'); } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); setActionLoading(false); }
+    try { 
+      await fetchWithAuth(`/admin/suppliers/${id}/status`, { 
+        method: 'PATCH', 
+        body: JSON.stringify({ status: 'VERIFIED' }) 
+      }); 
+      router.push('/dashboard/admin/suppliers'); 
+    } catch (err: any) { 
+      alert(err?.response?.data?.message || 'Failed to approve'); 
+      setActionLoading(false); 
+    }
   };
 
   const handleReject = async () => {
     const reason = prompt('Rejection reason:');
     if (!reason) return;
     setActionLoading(true);
-    try { await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'REJECTED', rejectionReason: reason }) }); router.push('/dashboard/admin/suppliers'); } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); setActionLoading(false); }
+    try { 
+      await fetchWithAuth(`/admin/suppliers/${id}/status`, { 
+        method: 'PATCH', 
+        body: JSON.stringify({ status: 'REJECTED', rejectionReason: reason }) 
+      }); 
+      router.push('/dashboard/admin/suppliers'); 
+    } catch (err: any) { 
+      alert(err?.response?.data?.message || 'Failed to reject'); 
+      setActionLoading(false); 
+    }
   };
 
-  if (loading) return <DashboardLayout title="Supplier Detail"><div className="flex items-center justify-center h-[60vh]"><LoadingSpinner size="lg" /></div></DashboardLayout>;
-  if (!supplier) return <DashboardLayout title="Supplier Detail"><div className="text-center py-20"><h2 className="text-xl font-bold mb-4">Supplier not found</h2><button onClick={() => router.back()} className="text-sm text-[#0D9373] font-semibold hover:underline">Go Back</button></div></DashboardLayout>;
+  if (loading) return (
+    <DashboardLayout title="Supplier Detail">
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <LoadingSpinner size="lg" text="Fetching profile details..." />
+      </div>
+    </DashboardLayout>
+  );
+
+  if (!supplier) return (
+    <DashboardLayout title="Supplier Detail">
+      <div style={{ textAlign: 'center', padding: '100px 24px' }}>
+        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 16 }}>Supplier not found</h2>
+        <button onClick={() => router.back()} style={{ color: 'var(--blue-400)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Go Back</button>
+      </div>
+    </DashboardLayout>
+  );
 
   const isPending = supplier.status === 'SUBMITTED' || supplier.status === 'UNDER_REVIEW';
-  const Field = ({ label, value }: { label: string; value: any }) => (<div><p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide mb-1">{label}</p><p className="text-sm font-medium text-[#0F1117]">{value || '—'}</p></div>);
+  
+  const Card = ({ title, children, icon: Icon }: { title: string; children: React.ReactNode; icon: any }) => (
+    <div style={{
+      background: '#16161D',
+      borderRadius: 18,
+      border: '1px solid rgba(255,255,255,0.06)',
+      padding: 24,
+      height: '100%',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 12 }}>
+        <Icon size={16} color="var(--blue-400)" />
+        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>{title}</h3>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+        {children}
+      </div>
+    </div>
+  );
+
+  const Field = ({ label, value }: { label: string; value: any }) => (
+    <div>
+      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{value || '—'}</p>
+    </div>
+  );
 
   return (
     <DashboardLayout title="Supplier Detail">
-      <div className="max-w-5xl mx-auto space-y-8 animate-fade-in-up pb-20">
-        <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 24px 80px' }}>
+        
+        {/* Top Header Card */}
+        <div style={{
+          background: '#16161D',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 20,
+          padding: '32px 32px',
+          marginBottom: 32,
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 24,
+          animation: 'fadeUp 0.5s ease-out both',
+        }}>
           <div>
-            <button onClick={() => router.back()} className="text-sm font-semibold text-[#6B7280] hover:text-[#0F1117] transition-colors flex items-center mb-2"><ArrowLeft className="w-4 h-4 mr-1" /> Back</button>
-            <div className="flex items-center gap-4">
-              <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold text-[#0F1117]">{supplier.companyName || 'Unknown'}</h1>
+            <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginBottom: 12 }}>
+              <ArrowLeft size={14} /> Back to Directory
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>
+                {supplier.companyName}
+              </h1>
               <StatusBadge status={supplier.status} size="md" />
             </div>
-            <p className="text-xs text-[#6B7280] mt-1">ID: {supplier.id}</p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>Registered on {new Date(supplier.createdAt).toLocaleDateString()}</p>
           </div>
+
           {isPending && (
-            <div className="flex items-center gap-3">
-              <button onClick={handleReject} disabled={actionLoading} className="px-6 py-3 rounded-xl bg-red-50 text-red-700 font-semibold text-sm hover:bg-red-100 transition-colors border border-red-200 flex items-center gap-2 disabled:opacity-50"><XCircle className="w-4 h-4" /> Reject</button>
-              <button onClick={handleApprove} disabled={actionLoading} className="px-6 py-3 rounded-xl bg-[#0D9373] text-white font-semibold text-sm hover:bg-[#0A7A61] shadow-lg shadow-[#0D9373]/20 transition-all flex items-center gap-2 disabled:opacity-50"><CheckCircle className="w-4 h-4" /> Approve</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button 
+                onClick={handleReject} 
+                disabled={actionLoading} 
+                style={{ padding: '12px 24px', borderRadius: 12, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', color: '#F87171', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
+              >
+                <XCircle size={15} /> Reject
+              </button>
+              <button 
+                onClick={handleApprove} 
+                disabled={actionLoading} 
+                style={{ padding: '12px 24px', borderRadius: 12, background: 'var(--blue-600)', border: 'none', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 0 20px rgba(37,99,235,0.4)' }}
+              >
+                <CheckCircle size={15} /> Approve Supplier
+              </button>
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
-            <h2 className="text-lg font-bold text-[#0F1117] border-b border-[#E5E7EB] pb-2">Business Details</h2>
-            <div className="grid grid-cols-2 gap-y-4 gap-x-6"><Field label="Company Name" value={supplier.companyName} /><Field label="Business Type" value={supplier.businessType} /><Field label="GST Number" value={supplier.gstNumber} /><Field label="PAN Number" value={supplier.panNumber} /><Field label="Year Established" value={supplier.yearEstablished} /></div>
-          </div>
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
-            <h2 className="text-lg font-bold text-[#0F1117] border-b border-[#E5E7EB] pb-2">Contact Info</h2>
-            <div className="grid grid-cols-2 gap-y-4 gap-x-6"><Field label="Primary Contact" value={supplier.contactName} /><Field label="Phone" value={supplier.phone} /><div className="col-span-2"><Field label="Account Email" value={supplier.user?.email} /></div><div className="col-span-2"><Field label="Address" value={[supplier.address, supplier.city, supplier.state, supplier.pincode].filter(Boolean).join(', ')} /></div></div>
-          </div>
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
-            <h2 className="text-lg font-bold text-[#0F1117] border-b border-[#E5E7EB] pb-2">Operations</h2>
-            <div className="grid grid-cols-2 gap-y-4 gap-x-6"><Field label="Workforce Size" value={supplier.workforceSize} /><Field label="Monthly Capacity" value={supplier.monthlyCapacity} /><Field label="Minimum Order Qty" value={supplier.moq} /><Field label="Avg Lead Time" value={supplier.leadTimeDays ? `${supplier.leadTimeDays} days` : undefined} /></div>
-          </div>
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
-            <h2 className="text-lg font-bold text-[#0F1117] border-b border-[#E5E7EB] pb-2">Documents</h2>
-            <div className="space-y-3">
-              {(supplier.documents || []).length > 0 ? supplier.documents.map((doc: any) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#0D9373]/30 transition-colors">
-                  <div className="flex items-center gap-3"><FileText className="w-5 h-5 text-[#6B7280]" /><div><p className="text-sm font-medium">{doc.type?.replace(/_/g, ' ') || 'Document'}</p><p className="text-xs text-[#6B7280]">{doc.fileName || 'file'}</p></div></div>
-                  <a href={doc.url} target="_blank" rel="noopener noreferrer" className="p-2 text-[#0D9373] hover:bg-[#ECFDF5] rounded-lg transition-colors"><Download className="w-4 h-4" /></a>
-                </div>
-              )) : <p className="text-sm text-[#9CA3AF] italic">No documents uploaded.</p>}
+        {/* Content Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, animation: 'fadeUp 0.6s 0.1s ease-out both' }}>
+          
+          <Card title="Business Registration" icon={Building2}>
+            <Field label="GST Number" value={supplier.gstNumber} />
+            <Field label="PAN Number" value={supplier.panNumber} />
+            <Field label="Business Type" value={supplier.businessType} />
+            <Field label="Established" value={supplier.yearEstablished} />
+          </Card>
+
+          <Card title="Operational Data" icon={Globe}>
+            <Field label="Workforce" value={supplier.workforceSize} />
+            <Field label="Monthly Cap" value={supplier.monthlyCapacity} />
+            <Field label="Min Order" value={supplier.moq} />
+            <Field label="Lead Time" value={supplier.leadTimeDays ? `${supplier.leadTimeDays} days` : '—'} />
+          </Card>
+
+          <Card title="Contact Information" icon={Shield}>
+            <div style={{ gridColumn: 'span 2' }}>
+              <Field label="Primary Contact" value={supplier.contactName} />
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <Field label="Email" value={supplier.user?.email} />
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <Field label="Phone" value={supplier.phone} />
+            </div>
+          </Card>
+
+          <div style={{ height: '100%' }}>
+            <div style={{
+              background: '#16161D',
+              borderRadius: 18,
+              border: '1px solid rgba(255,255,255,0.06)',
+              padding: 24,
+              height: '100%',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 12 }}>
+                <FileText size={16} color="var(--blue-400)" />
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>Verification Files</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {(supplier.documents || []).length > 0 ? supplier.documents.map((doc: any) => (
+                  <div key={doc.id} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    transition: 'border-color 0.2s',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <FileText size={18} color="rgba(255,255,255,0.3)" />
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>{doc.type?.replace(/_/g, ' ')}</p>
+                        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{doc.fileName || 'document_file.pdf'}</p>
+                      </div>
+                    </div>
+                    <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, background: 'rgba(37,99,235,0.1)', color: 'var(--blue-400)', transition: 'all 0.2s' }}>
+                      <Download size={14} />
+                    </a>
+                  </div>
+                )) : (
+                  <div style={{ textAlign: 'center', padding: '20px 0', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 12 }}>
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>No documents provided.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }
