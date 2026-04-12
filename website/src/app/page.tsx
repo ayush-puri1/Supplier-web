@@ -10,6 +10,8 @@ export default function LandingPage() {
       {/* ===== GOOGLE FONTS ===== */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,700;0,6..96,900;1,6..96,400;1,6..96,700;1,6..96,900&family=Syne:wght@400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap');
+
 
         :root {
           --font-display: 'Bodoni Moda', serif;
@@ -141,9 +143,9 @@ export default function LandingPage() {
 
         .heading-syne {
           font-family: var(--font-heading);
-          font-weight: 800;
-          line-height: 1.05;
-          letter-spacing: -0.02em;
+          font-weight: 900;
+          line-height: 1.25;
+          letter-spacing: -0.05em;
         }
 
         .divider { border-top: 1px solid rgba(255,255,255,0.04); }

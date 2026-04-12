@@ -11,14 +11,14 @@ const STATUS_STYLES: Record<string, string> = {
   DRAFT: 'bg-zinc-100 text-zinc-500 border-zinc-200',
   SUBMITTED: 'bg-amber-50 text-amber-700 border-amber-200',
   UNDER_REVIEW: 'bg-blue-50 text-blue-600 border-blue-200',
-  VERIFIED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  VERIFIED: 'bg-blue-50 text-emerald-700 border-emerald-200',
   CONDITIONAL: 'bg-orange-50 text-orange-600 border-orange-200',
   REJECTED: 'bg-red-50 text-red-700 border-red-200',
   SUSPENDED: 'bg-zinc-200 text-zinc-600 border-zinc-300',
   PENDING_APPROVAL: 'bg-amber-50 text-amber-700 border-amber-200',
-  LIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  LIVE: 'bg-blue-50 text-emerald-700 border-emerald-200',
   DELISTED: 'bg-zinc-200 text-zinc-600 border-zinc-300',
-  ACTIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  ACTIVE: 'bg-blue-50 text-emerald-700 border-emerald-200',
   INACTIVE: 'bg-red-50 text-red-700 border-red-200',
 };
 

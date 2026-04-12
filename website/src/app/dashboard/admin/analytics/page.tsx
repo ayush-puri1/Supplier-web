@@ -8,10 +8,10 @@ import StatusBadge from '@/components/ui/StatusBadge';
 
 const SUPPLIER_STATUS_COLORS: Record<string, string> = {
   DRAFT: 'bg-zinc-400', SUBMITTED: 'bg-amber-400', UNDER_REVIEW: 'bg-blue-400',
-  VERIFIED: 'bg-emerald-500', CONDITIONAL: 'bg-orange-400', REJECTED: 'bg-red-400', SUSPENDED: 'bg-zinc-600',
+  VERIFIED: 'bg-blue-500', CONDITIONAL: 'bg-orange-400', REJECTED: 'bg-red-400', SUSPENDED: 'bg-zinc-600',
 };
 const PRODUCT_STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-zinc-400', PENDING_APPROVAL: 'bg-amber-400', LIVE: 'bg-emerald-500', REJECTED: 'bg-red-400', DELISTED: 'bg-zinc-600',
+  DRAFT: 'bg-zinc-400', PENDING_APPROVAL: 'bg-amber-400', LIVE: 'bg-blue-500', REJECTED: 'bg-red-400', DELISTED: 'bg-zinc-600',
 };
 
 export default function AnalyticsPage() {
@@ -111,7 +111,7 @@ export default function AnalyticsPage() {
             <div className="space-y-3">
               {topSuppliers.map((s: any, i: number) => (
                 <div key={s.id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-[#F9FAFB] transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-[#0D9373] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                     #{i + 1}
                   </div>
                   <div className="flex-1 min-w-0">

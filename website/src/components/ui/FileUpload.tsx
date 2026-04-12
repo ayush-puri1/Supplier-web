@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { UploadCloud } from 'lucide-react';
+import { UploadCloud, Check, File } from 'lucide-react';
 
 interface FileUploadProps {
   label: string;
   accept?: string;
-  file?: File | null;
+  file?: File | string | null;
   onFileSelect: (file: File) => void;
   uploading?: boolean;
 }
@@ -19,28 +19,64 @@ export default function FileUpload({ label, accept = '.pdf,.jpg,.png,.jpeg', fil
     if (f) onFileSelect(f);
   };
 
+  const fileName = typeof file === 'string' ? file.split('/').pop() : file?.name;
+
   return (
-    <div className="rounded-2xl border-2 border-dashed border-[#E5E7EB] bg-[#F9FAFB] p-6 hover:border-[#0D9373]/40 transition-colors">
+    <div style={{
+      borderRadius: 16,
+      border: '2px dashed rgba(255,255,255,0.08)',
+      background: 'rgba(255,255,255,0.02)',
+      padding: '24px',
+      transition: 'all 0.3s',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 12,
+    }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(37,99,235,0.3)'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+    >
       <input ref={inputRef} type="file" accept={accept} onChange={handleChange} className="hidden" />
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-[#ECFDF5] flex items-center justify-center">
-          <UploadCloud className="w-6 h-6 text-[#0D9373]" />
-        </div>
-        <p className="text-sm font-semibold text-[#0F1117]">{label}</p>
-        {file ? (
-          <p className="text-xs text-[#0D9373] font-medium">{file.name}</p>
-        ) : (
-          <p className="text-xs text-[#6B7280]">PDF, JPG, PNG (max 5MB)</p>
-        )}
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="px-4 py-2 rounded-full text-xs font-bold bg-[#0D9373] text-white hover:bg-[#0A7A61] transition-colors disabled:opacity-50"
-        >
-          {uploading ? 'Uploading...' : file ? 'Change File' : 'Choose File'}
-        </button>
+      
+      <div style={{
+        width: 44, height: 44,
+        borderRadius: 12,
+        background: 'rgba(37,99,235,0.1)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--blue-400)',
+      }}>
+        {file ? <Check size={20} /> : <UploadCloud size={20} />}
       </div>
+
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: 'white', marginBottom: 4 }}>{label}</p>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>
+          {fileName || 'PDF, JPG, PNG (max 10MB)'}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        style={{
+          padding: '8px 20px',
+          borderRadius: 10,
+          fontSize: 12,
+          fontWeight: 700,
+          background: 'var(--blue-600)',
+          color: 'white',
+          border: 'none',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          marginTop: 4,
+          opacity: uploading ? 0.5 : 1,
+        }}
+        onMouseEnter={e => !uploading && (e.currentTarget.style.background = '#1D4ED8')}
+        onMouseLeave={e => !uploading && (e.currentTarget.style.background = 'var(--blue-600)')}
+      >
+        {uploading ? 'Processing...' : file ? 'Replace File' : 'Choose File'}
+      </button>
     </div>
   );
 }

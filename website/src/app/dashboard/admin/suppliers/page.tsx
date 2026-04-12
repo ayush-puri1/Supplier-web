@@ -10,7 +10,7 @@ const STATUS_TABS = ['ALL', 'SUBMITTED', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED',
 
 const TRANSITION_MAP: Record<string, { label: string; status: string; color: string }[]> = {
   SUBMITTED: [{ label: 'Start Review', status: 'UNDER_REVIEW', color: 'bg-blue-500 hover:bg-blue-600' }],
-  UNDER_REVIEW: [{ label: '✅ Verify', status: 'VERIFIED', color: 'bg-emerald-500 hover:bg-emerald-600' }, { label: '❌ Reject', status: 'REJECTED', color: 'bg-red-500 hover:bg-red-600' }, { label: '⚠️ Conditional', status: 'CONDITIONAL', color: 'bg-orange-500 hover:bg-orange-600' }],
+  UNDER_REVIEW: [{ label: '✅ Verify', status: 'VERIFIED', color: 'bg-blue-500 hover:bg-blue-600' }, { label: '❌ Reject', status: 'REJECTED', color: 'bg-red-500 hover:bg-red-600' }, { label: '⚠️ Conditional', status: 'CONDITIONAL', color: 'bg-orange-500 hover:bg-orange-600' }],
   VERIFIED: [{ label: '🚫 Suspend', status: 'SUSPENDED', color: 'bg-zinc-700 hover:bg-zinc-800' }],
   CONDITIONAL: [{ label: '🔄 Re-Review', status: 'UNDER_REVIEW', color: 'bg-blue-500 hover:bg-blue-600' }, { label: '❌ Reject', status: 'REJECTED', color: 'bg-red-500 hover:bg-red-600' }],
   REJECTED: [{ label: '↩️ Reset to Draft', status: 'DRAFT', color: 'bg-zinc-600 hover:bg-zinc-700' }],
@@ -62,7 +62,7 @@ export default function AdminSuppliersPage() {
 
         <div className="flex flex-wrap gap-2">
           {STATUS_TABS.map((tab) => (
-            <button key={tab} onClick={() => { setActiveTab(tab); setSelected(null); }} className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${activeTab === tab ? 'bg-[#0D9373] text-white border-[#0D9373] shadow-lg shadow-[#0D9373]/20' : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-[#F9FAFB] hover:text-[#0F1117]'}`}>
+            <button key={tab} onClick={() => { setActiveTab(tab); setSelected(null); }} className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${activeTab === tab ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-lg shadow-[#2563EB]/20' : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-[#F9FAFB] hover:text-[#0F1117]'}`}>
               {tab.replace('_', ' ')}
             </button>
           ))}
@@ -82,7 +82,7 @@ export default function AdminSuppliersPage() {
                         <tr key={s.id} onClick={() => { setSelected(s); setInternalNote(s.internalNotes || ''); }} className={`hover:bg-[#F9FAFB] transition-colors cursor-pointer ${selected?.id === s.id ? 'bg-[#ECFDF5]/50' : ''}`}>
                           <td className="px-6 py-4"><p className="text-sm font-semibold">{s.companyName}</p><p className="text-[10px] text-[#9CA3AF]">{s.user?.email}</p></td>
                           <td className="px-6 py-4"><StatusBadge status={s.status} /></td>
-                          <td className="px-6 py-4"><div className="flex items-center gap-2"><div className="w-12 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden"><div className="h-full bg-[#0D9373]" style={{ width: `${s.trustScore || 0}%` }} /></div><span className="text-xs font-bold">{s.trustScore ?? '—'}</span></div></td>
+                          <td className="px-6 py-4"><div className="flex items-center gap-2"><div className="w-12 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden"><div className="h-full bg-[#2563EB]" style={{ width: `${s.trustScore || 0}%` }} /></div><span className="text-xs font-bold">{s.trustScore ?? '—'}</span></div></td>
                           <td className="px-6 py-4 text-sm font-semibold">{s._count?.products || 0}</td>
                         </tr>
                       ))}
@@ -116,8 +116,8 @@ export default function AdminSuppliersPage() {
                   </section>
 
                   <section><p className="text-xs font-bold uppercase text-[#6B7280] mb-3 tracking-widest">Internal Notes <span className="text-red-500">(Admin Only)</span></p>
-                    <textarea className="w-full h-28 p-4 rounded-xl bg-white border border-[#E5E7EB] focus:ring-2 focus:ring-[#0D9373]/20 outline-none text-sm resize-none" placeholder="Add compliance notes..." value={internalNote} onChange={(e) => setInternalNote(e.target.value)} />
-                    <button onClick={handleSaveNote} className="mt-2 w-full py-2 rounded-xl bg-[#ECFDF5] text-[#0D9373] border border-[#A7F3D0] text-xs font-bold hover:bg-[#0D9373] hover:text-white transition-all">Save Note</button>
+                    <textarea className="w-full h-28 p-4 rounded-xl bg-white border border-[#E5E7EB] focus:ring-2 focus:ring-[#2563EB]/20 outline-none text-sm resize-none" placeholder="Add compliance notes..." value={internalNote} onChange={(e) => setInternalNote(e.target.value)} />
+                    <button onClick={handleSaveNote} className="mt-2 w-full py-2 rounded-xl bg-[#ECFDF5] text-[#2563EB] border border-[#A7F3D0] text-xs font-bold hover:bg-[#2563EB] hover:text-white transition-all">Save Note</button>
                   </section>
                 </div>
               ) : (

@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   keywords: ["B2B", "supplier portal", "verification", "onboarding", "marketplace"],
 };
 
+import DevTestingMenu from "@/components/ui/DevTestingMenu";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,6 +34,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
+        <DevTestingMenu />
       </body>
     </html>
   );

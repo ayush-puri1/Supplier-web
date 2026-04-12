@@ -76,13 +76,13 @@ export default function SystemConfigPage() {
 
   if (loading) return <DashboardLayout title="System Config"><div className="flex items-center justify-center h-[60vh]"><LoadingSpinner size="lg" /></div></DashboardLayout>;
 
-  const inputCls = "w-full px-4 py-3 rounded-xl border border-[#E5E7EB] text-sm focus:border-[#0D9373] focus:ring-2 focus:ring-[#0D9373]/20 outline-none transition-all";
+  const inputCls = "w-full px-4 py-3 rounded-xl border border-[#E5E7EB] text-sm focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 outline-none transition-all";
 
   return (
     <DashboardLayout title="System Config">
       <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
         <div>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold bg-gradient-to-r from-[#0D9373] to-[#065F46] bg-clip-text text-transparent mb-1">System Configuration</h1>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold bg-gradient-to-r from-[#2563EB] to-[#065F46] bg-clip-text text-transparent mb-1">System Configuration</h1>
           <p className="text-sm text-[#6B7280]">Adjust platform-wide thresholds, commissions, and operational mode.</p>
         </div>
 
@@ -127,7 +127,7 @@ export default function SystemConfigPage() {
 
               <div className="flex items-center justify-between p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
                 <div><p className="text-sm font-semibold text-[#0F1117]">Supplier Auto-Approve</p><p className="text-xs text-[#6B7280]">Auto-verify new profiles</p></div>
-                <ToggleSwitch enabled={supplierAutoApprove} onChange={setSupplierAutoApprove} color="bg-[#0D9373]" />
+                <ToggleSwitch enabled={supplierAutoApprove} onChange={setSupplierAutoApprove} color="bg-[#2563EB]" />
               </div>
 
               <div className="flex items-center justify-between p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
@@ -136,10 +136,10 @@ export default function SystemConfigPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-[#0D9373] to-[#065F46] rounded-2xl p-6 text-white">
+            <div className="bg-gradient-to-br from-[#2563EB] to-[#065F46] rounded-2xl p-6 text-white">
               <h3 className="font-semibold mb-2">Safety Notice</h3>
               <p className="text-sm text-white/70 mb-5">Changes saved here will affect all users instantly. Ensure you have verified the new thresholds before applying.</p>
-              <button onClick={handleSave} disabled={saving} className="w-full py-3 rounded-xl bg-white text-[#0D9373] font-bold text-sm hover:bg-white/90 transition-all disabled:opacity-50">
+              <button onClick={handleSave} disabled={saving} className="w-full py-3 rounded-xl bg-white text-[#2563EB] font-bold text-sm hover:bg-white/90 transition-all disabled:opacity-50">
                 {saving ? 'Saving...' : 'APPLY CHANGES NOW'}
               </button>
             </div>

@@ -8,16 +8,29 @@ interface LoadingSpinnerProps {
 }
 
 export default function LoadingSpinner({ size = 'md', text }: LoadingSpinnerProps) {
-  const sizeClasses = {
-    sm: 'w-5 h-5 border-2',
-    md: 'w-8 h-8 border-[3px]',
-    lg: 'w-12 h-12 border-4',
+  const sizeDims = {
+    sm: 20,
+    md: 32,
+    lg: 48,
   };
+  
+  const dim = sizeDims[size];
+  const borderW = size === 'sm' ? 2 : size === 'md' ? 3 : 4;
 
   return (
-    <div className="flex flex-col items-center justify-center gap-3">
-      <div className={`${sizeClasses[size]} border-[#0D9373] border-t-transparent rounded-full animate-spin`} />
-      {text && <p className="text-sm text-[#6B7280]">{text}</p>}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+      <div style={{
+          width: dim,
+          height: dim,
+          border: `${borderW}px solid var(--blue-600)`,
+          borderTopColor: 'transparent',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+      }} />
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
+      {text && <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>{text}</p>}
     </div>
   );
 }

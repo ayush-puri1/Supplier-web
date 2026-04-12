@@ -8,15 +8,34 @@ interface ToggleSwitchProps {
   color?: string;
 }
 
-export default function ToggleSwitch({ enabled, onChange, color = 'bg-[#0D9373]' }: ToggleSwitchProps) {
+export default function ToggleSwitch({ enabled, onChange, color = 'var(--blue-600)' }: ToggleSwitchProps) {
   return (
     <button
       type="button"
       onClick={() => onChange(!enabled)}
-      className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${enabled ? color : 'bg-zinc-300'}`}
+      style={{
+        position: 'relative',
+        width: 44,
+        height: 22,
+        borderRadius: 999,
+        background: enabled ? color : 'rgba(255,255,255,0.08)',
+        border: 'none',
+        cursor: 'pointer',
+        transition: 'background 0.3s',
+      }}
     >
       <div
-        className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${enabled ? 'left-7' : 'left-1'}`}
+        style={{
+          position: 'absolute',
+          top: 3,
+          left: enabled ? 25 : 3,
+          width: 16,
+          height: 16,
+          borderRadius: '50%',
+          background: 'white',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          transition: 'all 0.3s cubic-bezier(.22,1,.36,1)',
+        }}
       />
     </button>
   );

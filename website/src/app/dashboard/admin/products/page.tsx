@@ -9,9 +9,9 @@ import { Package } from 'lucide-react';
 
 const STATUS_TABS = ['ALL', 'PENDING_APPROVAL', 'LIVE', 'REJECTED', 'DELISTED', 'DRAFT'] as const;
 const TRANSITION_MAP: Record<string, { label: string; status: string; color: string }[]> = {
-  PENDING_APPROVAL: [{ label: '✅ Approve (Go Live)', status: 'LIVE', color: 'bg-emerald-500 hover:bg-emerald-600' }, { label: '❌ Reject', status: 'REJECTED', color: 'bg-red-500 hover:bg-red-600' }],
+  PENDING_APPROVAL: [{ label: '✅ Approve (Go Live)', status: 'LIVE', color: 'bg-blue-500 hover:bg-blue-600' }, { label: '❌ Reject', status: 'REJECTED', color: 'bg-red-500 hover:bg-red-600' }],
   LIVE: [{ label: '🚫 Delist', status: 'DELISTED', color: 'bg-zinc-700 hover:bg-zinc-800' }],
-  DELISTED: [{ label: '🔄 Re-list', status: 'LIVE', color: 'bg-emerald-500 hover:bg-emerald-600' }],
+  DELISTED: [{ label: '🔄 Re-list', status: 'LIVE', color: 'bg-blue-500 hover:bg-blue-600' }],
   REJECTED: [{ label: '🔄 Re-submit', status: 'PENDING_APPROVAL', color: 'bg-amber-500 hover:bg-amber-600' }],
   DRAFT: [],
 };
@@ -48,7 +48,7 @@ export default function AdminProductsPage() {
         <div><h1 className="font-[family-name:var(--font-display)] text-3xl font-bold text-[#0F1117] mb-1">Product Moderation</h1><p className="text-sm text-[#6B7280]">Review submitted products and ensure marketplace quality.</p></div>
 
         <div className="flex flex-wrap gap-2">
-          {STATUS_TABS.map(tab => (<button key={tab} onClick={() => { setActiveTab(tab); setSelected(null); }} className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${activeTab === tab ? 'bg-[#0D9373] text-white border-[#0D9373] shadow-lg shadow-[#0D9373]/20' : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-[#F9FAFB]'}`}>{tab.replace(/_/g, ' ')}</button>))}
+          {STATUS_TABS.map(tab => (<button key={tab} onClick={() => { setActiveTab(tab); setSelected(null); }} className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${activeTab === tab ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-lg shadow-[#2563EB]/20' : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-[#F9FAFB]'}`}>{tab.replace(/_/g, ' ')}</button>))}
         </div>
 
         {loading ? <div className="text-center py-20"><LoadingSpinner /></div> : (
