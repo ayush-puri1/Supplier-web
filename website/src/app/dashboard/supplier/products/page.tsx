@@ -23,7 +23,7 @@ function Sidebar() {
     { label: 'Settings',         icon: <Settings size={16} />,        href: '/dashboard/supplier/settings',      active: false },
   ];
   return (
-    <aside style={{ width: 220, flexShrink: 0, background: '#0D0D12', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
+    <aside style={{ width: 220, flexShrink: 0, background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
         <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
           <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>D</span>
@@ -104,12 +104,12 @@ export default function SupplierProductsPage() {
         @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Syne:wght@400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
         :root { --font-heading:'Newsreader',serif; --font-num:'Syne',sans-serif; --font-body:'DM Sans',sans-serif; }
         *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:var(--font-body); background:#0F0F14; color:white; -webkit-font-smoothing:antialiased; }
+        body { font-family:var(--font-body); background:#141414; color:white; -webkit-font-smoothing:antialiased; }
         ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
         .prod-search { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:white; font-family:var(--font-body); font-size:13px; padding:7px 12px 7px 34px; outline:none; width:220px; transition:all 0.2s; }
         .prod-search::placeholder{color:rgba(255,255,255,0.2)}
         .prod-search:focus{border-color:rgba(255,255,255,0.14);width:260px}
-        .prod-card { background:#15151C; border-radius:14px; border:1px solid rgba(255,255,255,0.07); overflow:hidden; transition:border-color 0.2s, transform 0.2s; }
+        .prod-card { background:#1E1E1E; border-radius:14px; border:1px solid rgba(255,255,255,0.07); overflow:hidden; transition:border-color 0.2s, transform 0.2s; }
         .prod-card:hover { border-color:rgba(37,99,235,0.3); transform:translateY(-2px); }
         .prod-action-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 0; border:none; background:transparent; cursor:pointer; font-family:var(--font-body); font-size:12px; font-weight:600; color:rgba(255,255,255,0.3); transition:all 0.2s; }
         .prod-action-btn:hover { color:rgba(255,255,255,0.7); background:rgba(255,255,255,0.04); }
@@ -119,12 +119,12 @@ export default function SupplierProductsPage() {
         @keyframes spin { to{transform:rotate(360deg)} }
       `}</style>
 
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#0F0F14' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
         <Sidebar />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
           {/* Header */}
-          <header style={{ height: 54, background: '#0D0D12', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', gap: 16 }}>
+          <header style={{ height: 54, background: '#0A0A0A', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', gap: 16 }}>
             <div style={{ position: 'relative' }}>
               <Search size={13} color="rgba(255,255,255,0.28)" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
               <input className="prod-search" placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} />
@@ -149,7 +149,7 @@ export default function SupplierProductsPage() {
                 { label: 'Pending',  value: products.filter(p => p.status === 'PENDING').length,  color: '#FBBF24',            icon: <Clock size={13} /> },
                 { label: 'Rejected', value: products.filter(p => p.status === 'REJECTED').length, color: '#F87171',            icon: <XCircle size={13} /> },
               ].map(s => (
-                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', borderRadius: 10, background: '#15151C', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', borderRadius: 10, background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)' }}>
                   <span style={{ color: s.color }}>{s.icon}</span>
                   <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'white' }}>{s.value}</span>
                   <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{s.label}</span>
@@ -166,7 +166,7 @@ export default function SupplierProductsPage() {
 
             {/* Empty */}
             {!loading && filtered.length === 0 && (
-              <div style={{ background: '#15151C', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '64px 20px', textAlign: 'center' as const }}>
+              <div style={{ background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '64px 20px', textAlign: 'center' as const }}>
                 <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(37,99,235,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <Package size={24} color="#60A5FA" />
                 </div>

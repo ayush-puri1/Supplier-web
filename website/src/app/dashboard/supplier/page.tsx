@@ -73,7 +73,7 @@ function Sidebar() {
     { label: 'Settings', icon: <Settings size={16} />, href: '/dashboard/supplier/settings', active: false },
   ];
   return (
-    <aside style={{ width: 220, flexShrink: 0, background: '#0D0D12', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
+    <aside style={{ width: 220, flexShrink: 0, background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
         <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
           <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>D</span>
@@ -226,7 +226,7 @@ function OrderCard({ order, onAction }: { order: Order; onAction: (id: string, n
 
   return (
     <div style={{
-      background: '#15151C',
+      background: '#1E1E1E',
       border: `1px solid ${isCompleted ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.09)'}`,
       borderRadius: 16,
       overflow: 'hidden',
@@ -462,7 +462,7 @@ export default function SupplierDashboard() {
         @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Syne:wght@400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
         :root { --font-heading:'Newsreader',serif; --font-num:'Syne',sans-serif; --font-body:'DM Sans',sans-serif; }
         *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:var(--font-body); background:#0F0F14; color:white; -webkit-font-smoothing:antialiased; }
+        body { font-family:var(--font-body); background:#141414; color:white; -webkit-font-smoothing:antialiased; }
         @keyframes toastIn   { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
         @keyframes urgentPulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
         @keyframes shimmer   { 0%,100%{opacity:0.4} 50%{opacity:1} }
@@ -476,12 +476,12 @@ export default function SupplierDashboard() {
       <FlashOverlay visible={flash} />
       <ToastContainer toasts={toasts} onDismiss={id => setToasts(prev => prev.filter(t => t.id !== id))} />
 
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#0F0F14' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
         <Sidebar />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
           {/* HEADER */}
-          <header style={{ height: 54, background: '#0D0D12', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', gap: 16 }}>
+          <header style={{ height: 54, background: '#0A0A0A', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <StoreToggle open={storeOpen} onToggle={() => {
                 const next = !storeOpen;
@@ -502,7 +502,7 @@ export default function SupplierDashboard() {
                   <Bell size={14} color="rgba(255,255,255,0.65)" />
                 </div>
                 {pendingCount > 0 && (
-                  <span style={{ position: 'absolute', top: -3, right: -3, width: 16, height: 16, borderRadius: '50%', background: '#3B82F6', fontSize: 9, fontWeight: 700, color: 'white', fontFamily: "'Syne', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #0D0D12' }}>{pendingCount}</span>
+                  <span style={{ position: 'absolute', top: -3, right: -3, width: 16, height: 16, borderRadius: '50%', background: '#3B82F6', fontSize: 9, fontWeight: 700, color: 'white', fontFamily: "'Syne', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #0A0A0A' }}>{pendingCount}</span>
                 )}
               </Link>
               <Link href="/dashboard/supplier/profile" style={{ width: 32, height: 32, borderRadius: '50%', background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 10px rgba(37,99,235,0.45)', textDecoration: 'none' }}>
@@ -525,7 +525,7 @@ export default function SupplierDashboard() {
                 { label: 'Orders in Transit', value: inTransitCount, icon: <Truck size={20} />, color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.15)', note: 'Currently dispatched' },
                 { label: 'Live Products', value: liveProducts, icon: <Package size={20} />, color: '#34D399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.15)', note: 'Active in catalog' },
               ].map(card => (
-                <div key={card.label} style={{ background: '#15151C', borderRadius: 14, border: `1px solid ${card.border}`, padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div key={card.label} style={{ background: '#1E1E1E', borderRadius: 14, border: `1px solid ${card.border}`, padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{ width: 46, height: 46, borderRadius: 12, flexShrink: 0, background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: card.color }}>{card.icon}</div>
                   <div>
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.28)', marginBottom: 5 }}>{card.label}</p>
@@ -557,7 +557,7 @@ export default function SupplierDashboard() {
                 </div>
 
                 {activeOrders.length === 0 ? (
-                  <div style={{ background: '#15151C', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '48px 20px', textAlign: 'center' as const }}>
+                  <div style={{ background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '48px 20px', textAlign: 'center' as const }}>
                     <CheckCircle2 size={36} color="rgba(52,211,153,0.35)" style={{ margin: '0 auto 14px' }} />
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.28)' }}>All orders handled — queue is empty.</p>
                   </div>
@@ -574,7 +574,7 @@ export default function SupplierDashboard() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
                 {/* Completed Orders */}
-                <div style={{ background: '#15151C', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden' }}>
+                <div style={{ background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden' }}>
                   <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 15, fontWeight: 700, color: 'white' }}>Completed</h3>
                     {completedOrders.length > 0 && (
@@ -613,7 +613,7 @@ export default function SupplierDashboard() {
                 </div>
 
                 {/* Quick tip card */}
-                <div style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.12) 0%, #15151C 70%)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: 14, padding: '20px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.12) 0%, #1E1E1E 70%)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: 14, padding: '20px', position: 'relative', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.05, pointerEvents: 'none' }}>
                     <Zap size={80} strokeWidth={1} color="#60A5FA" />
                   </div>
@@ -621,7 +621,7 @@ export default function SupplierDashboard() {
                   <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.28)', lineHeight: 1.65, marginBottom: 14 }}>
                     Update your product stock levels to ensure accurate availability for buyers.
                   </p>
-                  <Link href="/dashboard/supplier/products" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: 'white', color: '#0F0F14', fontFamily: "'Syne', sans-serif", fontSize: 11, fontWeight: 700, textDecoration: 'none' }}>
+                  <Link href="/dashboard/supplier/products" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: 'white', color: '#141414', fontFamily: "'Syne', sans-serif", fontSize: 11, fontWeight: 700, textDecoration: 'none' }}>
                     Manage Products <ArrowRight size={11} />
                   </Link>
                 </div>

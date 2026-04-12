@@ -49,7 +49,7 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
     { label: 'Settings',         icon: <Settings size={16} />,        href: '/dashboard/supplier/settings',      active: false },
   ];
   return (
-    <aside style={{ width: 220, flexShrink: 0, background: '#0D0D12', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
+    <aside style={{ width: 220, flexShrink: 0, background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
         <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
           <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>D</span>
@@ -98,7 +98,7 @@ function PendingView({ profile }: { profile: any }) {
       {/* Left */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* General Info */}
-        <div style={{ background: '#15151C', borderRadius: 14, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+        <div style={{ background: '#1E1E1E', borderRadius: 14, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
           <div style={{ padding: '18px 22px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <h2 style={{ fontFamily: "'Newsreader', serif", fontSize: 19, fontWeight: 700, color: 'white', marginBottom: 2 }}>General Info</h2>
@@ -142,7 +142,7 @@ function PendingView({ profile }: { profile: any }) {
           { label: 'Capacity',  value: profile?.monthlyCapacity ? '85%' : '—',           unit: 'Utilization', icon: <Package size={16} /> },
           { label: 'Trust Score', value: '—', unit: 'Pending', icon: <Shield size={16} /> },
         ].map(stat => (
-          <div key={stat.label} style={{ background: '#15151C', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div key={stat.label} style={{ background: '#1E1E1E', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)', marginBottom: 5 }}>{stat.label}</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
@@ -156,7 +156,7 @@ function PendingView({ profile }: { profile: any }) {
           </div>
         ))}
         {/* Audit card */}
-        <div style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.16) 0%, #15151C 65%)', borderRadius: 12, border: '1px solid rgba(37,99,235,0.2)', padding: '18px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.16) 0%, #1E1E1E 65%)', borderRadius: 12, border: '1px solid rgba(37,99,235,0.2)', padding: '18px', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06, pointerEvents: 'none' }}>
             <Shield size={80} strokeWidth={1} color="#60A5FA" />
           </div>
@@ -286,7 +286,7 @@ export default function OnboardingPage() {
         @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Syne:wght@400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
         :root { --font-heading:'Newsreader',serif; --font-num:'Syne',sans-serif; --font-body:'DM Sans',sans-serif; }
         *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:var(--font-body); background:#0F0F14; color:white; -webkit-font-smoothing:antialiased; }
+        body { font-family:var(--font-body); background:#141414; color:white; -webkit-font-smoothing:antialiased; }
         ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
         select option { background:#1a1a24; color:white; }
 
@@ -324,13 +324,13 @@ export default function OnboardingPage() {
         @keyframes spin { to{transform:rotate(360deg)} }
       `}</style>
 
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#0F0F14' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
         <Sidebar onLogout={() => { logout?.(); router.push('/login'); }} />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 
           {/* Header */}
-          <header style={{ height: 54, background: '#0D0D12', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', flexShrink: 0 }}>
+          <header style={{ height: 54, background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.28)' }}>Business Profile</span>
               <ChevronRight size={13} color="rgba(255,255,255,0.15)" />
@@ -377,7 +377,7 @@ export default function OnboardingPage() {
                     {/* Left: Step form card */}
                     <div>
                       {/* Step indicator (pill row) */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 20, background: '#15151C', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '4px', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 20, background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '4px', overflow: 'hidden' }}>
                         {STEPS.map((s, i) => {
                           const idx = i + 1;
                           const done = idx < step;
@@ -418,7 +418,7 @@ export default function OnboardingPage() {
                       )}
 
                       {/* Step card */}
-                      <div className={cardClass} style={{ background: '#15151C', borderRadius: 14, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                      <div className={cardClass} style={{ background: '#1E1E1E', borderRadius: 14, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
                         {/* Card header */}
                         <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -569,7 +569,7 @@ export default function OnboardingPage() {
                             : <div />
                           }
                           {step < 4
-                            ? <button onClick={handleNext} disabled={saving} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '10px 24px', borderRadius: 9, border: 'none', background: saving ? 'rgba(255,255,255,0.5)' : 'white', color: '#0F0F14', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 18px rgba(255,255,255,0.12)' }}>
+                            ? <button onClick={handleNext} disabled={saving} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '10px 24px', borderRadius: 9, border: 'none', background: saving ? 'rgba(255,255,255,0.5)' : 'white', color: '#141414', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 18px rgba(255,255,255,0.12)' }}>
                                 {saving ? 'Saving…' : <> Continue <ArrowRight size={14} /></>}
                               </button>
                             : <button onClick={handleSubmit} disabled={saving} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '10px 24px', borderRadius: 9, border: 'none', background: saving ? 'rgba(37,99,235,0.5)' : '#2563EB', color: 'white', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: saving ? 'none' : '0 0 24px rgba(37,99,235,0.4)' }}>
@@ -583,7 +583,7 @@ export default function OnboardingPage() {
                     {/* Right sidebar: guide */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {/* Step guide */}
-                      <div style={{ background: '#15151C', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden' }}>
+                      <div style={{ background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden' }}>
                         <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                           <p style={{ fontFamily: "'Syne', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.28)' }}>Progress</p>
                         </div>
@@ -603,7 +603,7 @@ export default function OnboardingPage() {
                       </div>
 
                       {/* Compliance notice */}
-                      <div style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.12) 0%, #15151C 70%)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: 14, padding: '18px', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.12) 0%, #1E1E1E 70%)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: 14, padding: '18px', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'absolute', bottom: -14, right: -14, opacity: 0.05, pointerEvents: 'none' }}>
                           <Shield size={72} strokeWidth={1} color="#60A5FA" />
                         </div>
