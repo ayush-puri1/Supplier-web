@@ -282,4 +282,65 @@ export class AdminController {
     async rejectDocument(id, dto, req) {
         return this.adminService.rejectDocument(id, dto.reason, req.user.userId, req.user.email);
     }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ADMIN MANAGEMENT ENDPOINTS — SUPER ADMIN ONLY
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * SUPER ADMIN: GET /admin/admins
+     * Lists all ADMIN + SUPER_ADMIN users with permissions, last login, and audit action count.
+     */
+    @Get('admins')
+    @Roles('SUPER_ADMIN')
+    @ApiOperation({ summary: 'SUPER ADMIN: List all platform administrators' })
+    async getAllAdmins() {
+        return this.adminService.findAllAdmins();
+    }
+
+    /**
+     * SUPER ADMIN: PATCH /admin/admins/:id/permissions
+     * Grants or revokes granular permission keys for a specific admin.
+     */
+    @Patch('admins/:id/permissions')
+    @Roles('SUPER_ADMIN')
+    @ApiOperation({ summary: 'SUPER ADMIN: Update admin permissions' })
+    @Bind(Param('id'), Body(), Request())
+    async updateAdminPermissions(id, dto, req) {
+        return this.adminService.updateAdminPermissions(
+            id,
+            dto.permissions,
+            req.user.userId,
+            req.user.email,
+        );
+    }
+
+    /**
+     * SUPER ADMIN: POST /admin/admins/invite
+     * Creates an admin account and sends an email invitation.
+     */
+    @Post('admins/invite')
+    @Roles('SUPER_ADMIN')
+    @ApiOperation({ summary: 'SUPER ADMIN: Invite a new admin by email' })
+    @Bind(Body(), Request())
+    async inviteAdmin(dto, req) {
+        return this.adminService.inviteAdmin(
+            dto.email,
+            dto.role,
+            req.user.userId,
+            req.user.email,
+        );
+    }
+
+    /**
+     * SUPER ADMIN: DELETE /admin/admins/:id
+     * Permanently removes an admin account. Cannot remove SUPER_ADMIN or self.
+     */
+    @Delete('admins/:id')
+    @Roles('SUPER_ADMIN')
+    @ApiOperation({ summary: 'SUPER ADMIN: Remove an admin account' })
+    @Bind(Param('id'), Request())
+    async removeAdmin(id, req) {
+        return this.adminService.removeAdmin(id, req.user.userId, req.user.email);
+    }
 }

@@ -57,6 +57,7 @@ export class AdminService {
             liveProducts,
             draftProducts,
             rejectedProducts,
+            totalUsers,
         ] = await Promise.all([
             this.prisma.supplier.count(),
             this.prisma.supplier.count({
@@ -71,9 +72,11 @@ export class AdminService {
             this.prisma.product.count({ where: { status: 'LIVE' } }),
             this.prisma.product.count({ where: { status: 'DRAFT' } }),
             this.prisma.product.count({ where: { status: 'REJECTED' } }),
+            this.prisma.user.count(),
         ]);
 
         return {
+            // Nested shape — used by Admin Portal page
             suppliers: {
                 total: totalSuppliers,
                 pending: pendingSuppliers,
@@ -89,6 +92,12 @@ export class AdminService {
                 draft: draftProducts,
                 rejected: rejectedProducts,
             },
+            users: { total: totalUsers },
+            // Flat aliases — used by Super Admin Command Center
+            totalSuppliers,
+            pendingSuppliers,
+            totalProducts,
+            totalUsers,
         };
     }
 
@@ -568,5 +577,167 @@ export class AdminService {
             data: { internalNotes },
             include: this.supplierInclude,
         });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ADMIN MANAGEMENT — SUPER ADMIN ONLY
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * SUPER ADMIN: List all platform administrators (ADMIN + SUPER_ADMIN) with
+     * their permissions, last login timestamp, and total audit actions count.
+     */
+    async findAllAdmins() {
+        const admins = await this.prisma.user.findMany({
+            where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                isActive: true,
+                adminPermissions: true,
+                lastLoginAt: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: 'asc' },
+        });
+
+        // Attach per-admin audit log action count
+        const withCounts = await Promise.all(
+            admins.map(async (admin) => {
+                const actionsCount = await this.prisma.auditLog.count({
+                    where: { actorId: admin.id },
+                });
+                return {
+                    ...admin,
+                    actionsCount,
+                    lastActive: admin.lastLoginAt
+                        ? this._timeAgo(admin.lastLoginAt)
+                        : 'Never',
+                    joinedAt: admin.createdAt.toLocaleDateString('en-US', {
+                        month: 'short',
+                        year: 'numeric',
+                    }),
+                    status: !admin.isActive
+                        ? 'SUSPENDED'
+                        : 'ACTIVE',
+                    permissions: admin.adminPermissions,
+                };
+            })
+        );
+
+        return withCounts;
+    }
+
+    /**
+     * Helper: human-readable '5 minutes ago' string.
+     */
+    _timeAgo(date) {
+        const diff = Date.now() - new Date(date).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return `${mins} minute${mins > 1 ? 's' : ''} ago`;
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return `${hrs} hour${hrs > 1 ? 's' : ''} ago`;
+        const days = Math.floor(hrs / 24);
+        return `${days} day${days > 1 ? 's' : ''} ago`;
+    }
+
+    /**
+     * SUPER ADMIN: Update the granular permission keys for an admin user.
+     * Cannot change permissions of another SUPER_ADMIN.
+     */
+    async updateAdminPermissions(id, permissions, actorId, actorEmail) {
+        const user = await this.prisma.user.findUnique({ where: { id } });
+        if (!user) throw new NotFoundException('User not found');
+        if (user.role === 'SUPER_ADMIN') {
+            throw new BadRequestException('Cannot modify Super Admin permissions');
+        }
+
+        const result = await this.prisma.user.update({
+            where: { id },
+            data: { adminPermissions: permissions },
+            select: { id: true, email: true, adminPermissions: true },
+        });
+
+        await this.audit.log({
+            actorId: actorId || 'system',
+            actorEmail,
+            action: 'ADMIN_PERMISSIONS_UPDATED',
+            entityType: 'User',
+            entityId: id,
+            details: `Permissions updated: [${permissions.join(', ')}]`,
+        });
+
+        return result;
+    }
+
+    /**
+     * SUPER ADMIN: Invite a new admin by email.
+     * Creates the account (inactive until they set a password), sends an invite email.
+     */
+    async inviteAdmin(email, role = 'ADMIN', actorId, actorEmail) {
+        const existing = await this.prisma.user.findUnique({ where: { email } });
+        if (existing) throw new BadRequestException('A user with this email already exists');
+
+        // Create with a random placeholder password; they must reset via invite link
+        const placeholderHash = await bcrypt.hash(`invite-${Date.now()}`, 10);
+        const user = await this.prisma.user.create({
+            data: {
+                email,
+                password: placeholderHash,
+                role: role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'ADMIN',
+                isEmailVerified: false,
+                isActive: true,
+                adminPermissions: [],
+            },
+            select: { id: true, email: true, role: true, createdAt: true },
+        });
+
+        // Send invite email (gracefully swallow send errors so DB record still persists)
+        try {
+            await this.mail.sendAdminInvite(email, role);
+        } catch (err) {
+            console.error('Admin invite email failed (non-fatal):', err?.message);
+        }
+
+        await this.audit.log({
+            actorId: actorId || 'system',
+            actorEmail,
+            action: 'ADMIN_INVITED',
+            entityType: 'User',
+            entityId: user.id,
+            details: `Admin invite sent to ${email} with role ${role}`,
+        });
+
+        return { ...user, status: 'INVITED', actionsCount: 0, permissions: [] };
+    }
+
+    /**
+     * SUPER ADMIN: Permanently remove an admin user.
+     * Guards: Cannot remove a SUPER_ADMIN. Cannot self-delete.
+     */
+    async removeAdmin(id, actorId, actorEmail) {
+        const user = await this.prisma.user.findUnique({ where: { id } });
+        if (!user) throw new NotFoundException('User not found');
+        if (user.role === 'SUPER_ADMIN') {
+            throw new BadRequestException('Cannot remove a Super Admin');
+        }
+        if (id === actorId) {
+            throw new BadRequestException('Cannot remove your own account');
+        }
+
+        await this.prisma.user.delete({ where: { id } });
+
+        await this.audit.log({
+            actorId: actorId || 'system',
+            actorEmail,
+            action: 'ADMIN_REMOVED',
+            entityType: 'User',
+            entityId: id,
+            details: `Admin account removed: ${user.email}`,
+        });
+
+        return { message: 'Admin removed successfully' };
     }
 }

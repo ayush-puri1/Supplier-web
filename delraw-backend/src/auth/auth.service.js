@@ -91,7 +91,7 @@ export class AuthService {
         if (user && user.isEmailVerified) throw new BadRequestException('Email already verified');
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
         const placeholderPass = await bcrypt.hash('TEMP_PASS_OTP', 10);
 
@@ -187,6 +187,12 @@ export class AuthService {
 
         const match = await bcrypt.compare(password, user.password);
         if (!match) throw new UnauthorizedException('Invalid credentials');
+
+        // Stamp last login time
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+        });
 
         await this.audit.log({
             actorId: user.id,
@@ -306,7 +312,7 @@ export class AuthService {
         if (!user) return { message: 'Reset code sent if email exists' };
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
         await this.prisma.user.update({
             where: { email },
