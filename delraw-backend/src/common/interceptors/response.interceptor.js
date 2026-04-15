@@ -14,8 +14,6 @@ export class ResponseInterceptor {
    * @returns {import('rxjs').Observable<any>}
    */
   intercept(context, next) {
-    return next.handle().pipe(
-      map(data => ({ success: true, data }))
-    );
+    return next.handle().pipe(map((data) => ({ success: true, data })));
   }
 }

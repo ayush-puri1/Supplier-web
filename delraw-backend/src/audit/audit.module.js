@@ -8,9 +8,9 @@ import { PrismaModule } from '../prisma/prisma.module';
  * Records interactions across the entire platform for security and analysis.
  */
 @Module({
-    imports: [PrismaModule],
-    providers: [AuditService],
-    controllers: [AuditController],
-    exports: [AuditService],
+  imports: [PrismaModule],
+  providers: [AuditService],
+  controllers: [AuditController],
+  exports: [AuditService],
 })
 export class AuditModule {}

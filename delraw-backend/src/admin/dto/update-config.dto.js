@@ -1,24 +1,40 @@
-import { IsOptional, IsBoolean, IsInt, Min, Max, IsString, IsEmail } from 'class-validator';
+import {
+  IsOptional,
+  IsBoolean,
+  IsInt,
+  Min,
+  Max,
+  IsString,
+  IsEmail,
+} from 'class-validator';
 
 /**
  * DTO for updating global platform behavior and limits.
  */
 export class UpdateSystemConfigDto {
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   maintenanceMode;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   supplierAutoApprove;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   allowNewRegistrations;
 
-  @IsOptional() @IsInt() @Min(1) @Max(500)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(500)
   maxProductsPerSupplier;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   platformName;
 
-  @IsOptional() @IsEmail()
+  @IsOptional()
+  @IsEmail()
   supportEmail;
 }

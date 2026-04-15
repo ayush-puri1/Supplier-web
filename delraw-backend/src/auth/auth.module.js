@@ -13,17 +13,17 @@ import { SessionService } from './session.service';
  * Registers JWT with platform secrets and exports services for global reuse.
  */
 @Module({
-    imports: [
-        PrismaModule,
-        MailModule,
-        AuditModule,
-        JwtModule.register({
-            secret: process.env.JWT_SECRET || 'delraw_secret',
-            signOptions: { expiresIn: '1d' },
-        }),
-    ],
-    providers: [AuthService, JwtStrategy, SessionService],
-    controllers: [AuthController],
-    exports: [AuthService, SessionService],
+  imports: [
+    PrismaModule,
+    MailModule,
+    AuditModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'delraw_jwt_2026',
+      signOptions: { expiresIn: '1d' },
+    }),
+  ],
+  providers: [AuthService, JwtStrategy, SessionService],
+  controllers: [AuthController],
+  exports: [AuthService, SessionService],
 })
-export class AuthModule { }
+export class AuthModule {}

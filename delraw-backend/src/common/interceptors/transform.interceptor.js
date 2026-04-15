@@ -3,7 +3,7 @@ import { map } from 'rxjs/operators';
 
 /**
  * A more advanced interceptor that can handle nested data and custom messages.
- * Useful for normalizing varied response shapes from different services into a 
+ * Useful for normalizing varied response shapes from different services into a
  * standard { success, data, message } format.
  */
 @Injectable()

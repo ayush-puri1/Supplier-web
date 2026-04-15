@@ -23,12 +23,12 @@ export class AllExceptionsFilter {
 
     const message =
       exception instanceof HttpException
-        ? (exception.getResponse()).message || exception.message
+        ? exception.getResponse().message || exception.message
         : 'Internal server error';
 
     const errorCode =
       exception instanceof HttpException
-        ? (exception.getResponse()).errorCode || undefined
+        ? exception.getResponse().errorCode || undefined
         : undefined;
 
     response.status(status).json({

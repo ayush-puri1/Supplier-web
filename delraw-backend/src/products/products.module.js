@@ -9,9 +9,9 @@ import { AwsModule } from '../aws/aws.module';
  * Links Prisma for DB and AWS for image storage.
  */
 @Module({
-    imports: [PrismaModule, AwsModule],
-    providers: [ProductsService],
-    controllers: [ProductsController],
-    exports: [ProductsService],
+  imports: [PrismaModule, AwsModule],
+  providers: [ProductsService],
+  controllers: [ProductsController],
+  exports: [ProductsService],
 })
-export class ProductsModule { }
+export class ProductsModule {}

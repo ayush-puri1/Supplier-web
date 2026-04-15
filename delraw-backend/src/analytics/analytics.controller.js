@@ -13,28 +13,28 @@ import { AuditService } from '../audit/audit.service';
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles('ADMIN', 'SUPER_ADMIN')
 export class AnalyticsController {
-    constructor(
-        @Inject(AnalyticsService) analyticsService,
-        @Inject(AuditService) auditService
-    ) {
-        this.analyticsService = analyticsService;
-        this.auditService = auditService;
-    }
+  constructor(
+    @Inject(AnalyticsService) analyticsService,
+    @Inject(AuditService) auditService,
+  ) {
+    this.analyticsService = analyticsService;
+    this.auditService = auditService;
+  }
 
-    /**
-     * GET /admin/analytics
-     * Returns combined metrics and recent activity for the overview dashboard.
-     */
-    @Get()
-    async getDashboard() {
-        const [metrics, recentActivity] = await Promise.all([
-            this.analyticsService.getDashboardMetrics(),
-            this.auditService.getRecentActivity(10),
-        ]);
+  /**
+   * GET /admin/analytics
+   * Returns combined metrics and recent activity for the overview dashboard.
+   */
+  @Get()
+  async getDashboard() {
+    const [metrics, recentActivity] = await Promise.all([
+      this.analyticsService.getDashboardMetrics(),
+      this.auditService.getRecentActivity(10),
+    ]);
 
-        return {
-            ...metrics,
-            recentActivity,
-        };
-    }
+    return {
+      ...metrics,
+      recentActivity,
+    };
+  }
 }

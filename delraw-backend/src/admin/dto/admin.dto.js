@@ -1,15 +1,36 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, MinLength, IsEmail } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  MinLength,
+  IsEmail,
+} from 'class-validator';
 
 /**
  * DTO for updating a supplier's status.
  */
 export class UpdateSupplierStatusDto {
-  @ApiProperty({ example: 'VERIFIED', description: 'New status for the supplier' })
-  @IsEnum(['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'CONDITIONAL', 'SUSPENDED'])
+  @ApiProperty({
+    example: 'VERIFIED',
+    description: 'New status for the supplier',
+  })
+  @IsEnum([
+    'DRAFT',
+    'SUBMITTED',
+    'UNDER_REVIEW',
+    'VERIFIED',
+    'REJECTED',
+    'CONDITIONAL',
+    'SUSPENDED',
+  ])
   status;
 
-  @ApiPropertyOptional({ description: 'Reason if the status is being set to REJECTED' })
+  @ApiPropertyOptional({
+    description: 'Reason if the status is being set to REJECTED',
+  })
   @IsString()
   @IsOptional()
   rejectionReason;
@@ -23,7 +44,9 @@ export class UpdateProductStatusDto {
   @IsEnum(['DRAFT', 'PENDING_APPROVAL', 'LIVE', 'REJECTED', 'DELISTED'])
   status;
 
-  @ApiPropertyOptional({ description: 'Reason if the status is being set to REJECTED' })
+  @ApiPropertyOptional({
+    description: 'Reason if the status is being set to REJECTED',
+  })
   @IsString()
   @IsOptional()
   rejectionReason;

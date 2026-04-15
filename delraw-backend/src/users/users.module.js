@@ -7,8 +7,8 @@ import { PrismaModule } from '../prisma/prisma.module';
  * Exports UsersService for use in Auth and other modules.
  */
 @Module({
-    imports: [PrismaModule],
-    providers: [UsersService],
-    exports: [UsersService],
+  imports: [PrismaModule],
+  providers: [UsersService],
+  exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}

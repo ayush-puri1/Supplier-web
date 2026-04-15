@@ -9,7 +9,7 @@ import * as nodemailer from 'nodemailer';
 export class MailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
-      service: 'gmail', 
+      service: 'gmail',
       auth: {
         user: process.env.SMTP_USER || '',
         pass: process.env.SMTP_PASS || '',
@@ -23,6 +23,17 @@ export class MailService {
    * @param {string} otp - The 6-digit one-time password.
    */
   async sendOtpEmail(to, otp) {
+    const isSmtpConfigured = process.env.SMTP_USER && process.env.SMTP_PASS;
+
+    if (!isSmtpConfigured) {
+      console.log('-----------------------------------------');
+      console.log('📨 DEVELOPMENT MODE: OTP Email Bypass');
+      console.log(`To: ${to}`);
+      console.log(`OTP Code: ${otp}`);
+      console.log('-----------------------------------------');
+      return;
+    }
+
     try {
       await this.transporter.sendMail({
         from: `"Supplier Portal" <${process.env.SMTP_USER}>`,

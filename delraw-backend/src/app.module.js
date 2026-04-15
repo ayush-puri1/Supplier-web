@@ -25,11 +25,13 @@ import { AnalyticsModule } from './analytics/analytics.module';
     PrismaModule,
     AuthModule,
     UsersModule,
-    ThrottlerModule.forRoot([{
-      name: 'short',
-      ttl: 60000,
-      limit: 5,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 60000,
+        limit: 5,
+      },
+    ]),
     ProductsModule,
     DocumentsModule,
     AdminModule,
@@ -48,4 +50,4 @@ import { AnalyticsModule } from './analytics/analytics.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
