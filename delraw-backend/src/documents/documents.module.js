@@ -7,8 +7,8 @@ import { PrismaModule } from '../prisma/prisma.module';
  * Module dedicated to managing supplier documentation and compliance uploads.
  */
 @Module({
-    imports: [PrismaModule],
-    providers: [DocumentsService],
-    controllers: [DocumentsController],
+  imports: [PrismaModule],
+  providers: [DocumentsService],
+  controllers: [DocumentsController],
 })
-export class DocumentsModule { }
+export class DocumentsModule {}

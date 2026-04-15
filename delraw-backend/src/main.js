@@ -16,21 +16,27 @@ async function bootstrap() {
 
   // Security layering: Helmet helps secure the app by setting various HTTP headers
   app.use(helmet());
-  
+
   // CORS: Allow communication with the Next.js frontend
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://localhost:3001',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
   // Validation: Global configuration for class-validator based DTOs
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,        // Automatically strip properties that are not in the DTO
-    forbidNonWhitelisted: false,
-    transform: true,        // Automatically transform primitive types (e.g., string id to number if needed)
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Automatically strip properties that are not in the DTO
+      forbidNonWhitelisted: false,
+      transform: true, // Automatically transform primitive types (e.g., string id to number if needed)
+    }),
+  );
 
   // Global Pipeline: Standardized response interception and error filtering
   app.useGlobalInterceptors(new ResponseInterceptor());
@@ -39,7 +45,9 @@ async function bootstrap() {
   // Documentation: Auto-generate Swagger UI for API exploration
   const config = new DocumentBuilder()
     .setTitle('Delraw Supplier Portal API')
-    .setDescription('Backend API for supplier onboarding and product management')
+    .setDescription(
+      'Backend API for supplier onboarding and product management',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -49,8 +57,8 @@ async function bootstrap() {
 
   // Startup: Begin listening on the defined port
   const port = process.env.PORT || 5000;
-  await app.listen(port);
-  
+  await app.listen(port, '0.0.0.0');
+
   console.log(`🚀 Backend running on http://localhost:${port}`);
   console.log(`📖 API Documentation: http://localhost:${port}/api/docs`);
 }

@@ -9,8 +9,8 @@ import { AuditModule } from '../audit/audit.module';
  * Links together stats gathering and audit history to provide a complete picture of app usage.
  */
 @Module({
-    imports: [PrismaModule, AuditModule],
-    providers: [AnalyticsService],
-    controllers: [AnalyticsController],
+  imports: [PrismaModule, AuditModule],
+  providers: [AnalyticsService],
+  controllers: [AnalyticsController],
 })
 export class AnalyticsModule {}

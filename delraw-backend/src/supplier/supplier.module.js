@@ -12,4 +12,4 @@ import { PrismaModule } from '../prisma/prisma.module';
   providers: [SupplierService],
   controllers: [SupplierController],
 })
-export class SupplierModule { }
+export class SupplierModule {}

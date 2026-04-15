@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray, Min, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsArray,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -37,7 +45,9 @@ export class CreateProductDto {
   @IsNotEmpty()
   name;
 
-  @ApiPropertyOptional({ example: 'Heavy-duty textile for automotive industry' })
+  @ApiPropertyOptional({
+    example: 'Heavy-duty textile for automotive industry',
+  })
   @IsString()
   @IsOptional()
   description;
@@ -73,7 +83,10 @@ export class CreateProductDto {
   @IsOptional()
   unit;
 
-  @ApiPropertyOptional({ type: [String], description: 'List of pre-uploaded S3 image keys or URLs' })
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'List of pre-uploaded S3 image keys or URLs',
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()

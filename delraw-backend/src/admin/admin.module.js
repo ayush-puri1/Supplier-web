@@ -8,13 +8,13 @@ import { AuthModule } from '../auth/auth.module';
 import { MailModule } from '../mail/mail.module';
 
 /**
- * Centrailized module for platform oversight. 
+ * Centrailized module for platform oversight.
  * Integrates products, auditing, and authentication mechanisms to provide
  * broad management capabilities to staff.
  */
 @Module({
-    imports: [PrismaModule, ProductsModule, AuditModule, AuthModule, MailModule],
-    providers: [AdminService],
-    controllers: [AdminController],
+  imports: [PrismaModule, ProductsModule, AuditModule, AuthModule, MailModule],
+  providers: [AdminService],
+  controllers: [AdminController],
 })
-export class AdminModule { }
+export class AdminModule {}

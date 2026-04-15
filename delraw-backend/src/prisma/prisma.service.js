@@ -8,23 +8,23 @@ import { PrismaClient } from '@prisma/client';
  */
 @Injectable()
 export class PrismaService extends PrismaClient {
-    constructor() {
-        super();
-    }
+  constructor() {
+    super();
+  }
 
-    /**
-     * Called when the module is initialized.
-     * Establishes the connection to the PostgreSQL database.
-     */
-    async onModuleInit() {
-        await this.$connect();
-    }
+  /**
+   * Called when the module is initialized.
+   * Establishes the connection to the PostgreSQL database.
+   */
+  async onModuleInit() {
+    await this.$connect();
+  }
 
-    /**
-     * Called when the module is destroyed.
-     * Safely closes the database connection to prevent resource leaks.
-     */
-    async onModuleDestroy() {
-        await this.$disconnect();
-    }
+  /**
+   * Called when the module is destroyed.
+   * Safely closes the database connection to prevent resource leaks.
+   */
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
 }

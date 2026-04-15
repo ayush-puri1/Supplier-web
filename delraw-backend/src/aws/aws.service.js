@@ -1,5 +1,9 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 
 /**
@@ -15,7 +19,9 @@ export class AwsService {
     this.bucketName = process.env.AWS_S3_BUCKET_NAME || '';
 
     if (!region || !accessKeyId || !secretAccessKey || !this.bucketName) {
-      console.warn('AWS credentials are not fully configured in the .env file.');
+      console.warn(
+        'AWS credentials are not fully configured in the .env file.',
+      );
     }
 
     this.s3Client = new S3Client({

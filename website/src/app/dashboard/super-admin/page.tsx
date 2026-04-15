@@ -9,7 +9,7 @@ import {
   Users, Package, AlertCircle, ArrowRight,
   LayoutDashboard, LogOut, Shield,
   BarChart3, History, Lock,
-  UserCog, Activity, RefreshCw, Zap, Globe, UserCheck, Ban, Settings, CheckCircle
+  UserCog, Activity, RefreshCw, Zap, Globe, UserCheck, Ban, Settings, CheckCircle, Crown
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════
@@ -45,6 +45,7 @@ export function SuperAdminSidebar({ active }: { active: string }) {
     { label: 'Analytics', icon: <BarChart3 size={15} />, href: '/dashboard/admin/analytics', key: 'analytics' },
     { label: 'Audit Logs', icon: <History size={15} />, href: '/dashboard/admin/audit-logs', key: 'audit' },
     { label: 'System Config', icon: <Settings size={15} />, href: '/dashboard/super-admin/config', key: 'config' },
+    { label: 'Admin Management', icon: <Crown size={15} />, href: '/dashboard/super-admin/admin-management', key: 'admin_mgmt' },
     { label: 'Admin Portal', icon: <Shield size={15} />, href: '/dashboard/admin', key: 'admin' },
   ];
   return (

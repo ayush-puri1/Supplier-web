@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 /**
  * DTO for approving a document. Body is usually empty as ID is in the URL.
  */
-export class ApproveDocumentDto { }
+export class ApproveDocumentDto {}
 
 /**
  * DTO for rejecting a document. Requires a detailed reason.

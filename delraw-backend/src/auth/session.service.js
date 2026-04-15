@@ -27,7 +27,7 @@ export class SessionService {
         deviceType: detectDeviceType(params.userAgent),
         expiresAt: params.expiresAt,
         isActive: true,
-      }
+      },
     });
   }
 
@@ -37,7 +37,7 @@ export class SessionService {
   async deactivateAllSessions(userId) {
     return this.prisma.userSession.updateMany({
       where: { userId, isActive: true },
-      data: { isActive: false }
+      data: { isActive: false },
     });
   }
 
@@ -47,7 +47,7 @@ export class SessionService {
   async getActiveSessions(userId) {
     return this.prisma.userSession.findMany({
       where: { userId, isActive: true, expiresAt: { gt: new Date() } },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -59,7 +59,8 @@ export class SessionService {
       where: { isActive: true, expiresAt: { gt: new Date() } },
       include: { user: { select: { email: true, role: true } } },
       orderBy: { createdAt: 'desc' },
-      skip, take
+      skip,
+      take,
     });
   }
 }

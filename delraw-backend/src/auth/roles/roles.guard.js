@@ -18,7 +18,7 @@ export class RolesGuard {
    */
   constructor(@Inject(Reflector) reflector) {
     this.reflector = reflector;
-   }
+  }
 
   /**
    * Determines if access is granted for the current execution context.
