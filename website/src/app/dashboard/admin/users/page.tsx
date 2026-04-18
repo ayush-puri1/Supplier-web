@@ -5,57 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Plus, X, ShieldOff , Crown } from 'lucide-react';
-import { SuperAdminSidebar } from '../../super-admin/page';
+import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Plus, X, ShieldOff, Crown } from 'lucide-react';
 
-/* ══════════════════════════════════════════════
-   ADMIN SIDEBAR
-══════════════════════════════════════════════ */
-function AdminSidebar() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-  const navItems = [
-    { label: 'Overview', icon: <LayoutDashboard size={16} />, href: '/dashboard/admin', active: false },
-    { label: 'Analytics', icon: <BarChart3 size={16} />, href: '/dashboard/admin/analytics', active: false },
-    { label: 'Suppliers', icon: <Users size={16} />, href: '/dashboard/admin/suppliers', active: false },
-    { label: 'Products', icon: <Package size={16} />, href: '/dashboard/admin/products', active: false },
-    { label: 'Audit Logs', icon: <History size={16} />, href: '/dashboard/admin/audit-logs', active: false },
-    
-    { label: 'Users', icon: <Users size={16} />, href: '/dashboard/admin/users', active: true },
-  ];
-  return (
-    <aside style={{ width: 220, flexShrink: 0, background: '#050505', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
-        <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
-          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "var(--font-heading)" }}>D</span>
-        </div>
-        <div>
-          <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
-          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>Admin Portal</div>
-        </div>
-      </Link>
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
-        {navItems.map(item => (
-          <Link key={item.label} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 12px', borderRadius: 9, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: item.active ? 600 : 400, color: item.active ? 'white' : 'rgba(255,255,255,0.38)', background: item.active ? 'rgba(37,99,235,0.14)' : 'transparent', borderLeft: item.active ? '2px solid #60A5FA' : '2px solid transparent', transition: 'all 0.2s' }}>
-            <span style={{ color: item.active ? '#60A5FA' : 'rgba(255,255,255,0.28)', flexShrink: 0 }}>{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
-        {user && (
-          <div style={{ padding: '8px 12px', borderRadius: 9, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 8 }}>
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email || 'admin@delraw.com'}</p>
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{user?.role?.replace('_', ' ') || 'ADMIN'}</p>
-          </div>
-        )}
-        <button onClick={() => { logout?.(); router.push('/login'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(248,113,113,0.65)', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(248,113,113,0.1)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-          <LogOut size={15} /> Sign Out
-        </button>
-      </div>
-    </aside>
-  );
-}
+// Shared Components
+import Sidebar from '@/components/Sidebar';
+import DashboardHeader from '@/components/DashboardHeader';
+import StatusBadge from '@/components/StatusBadge';
 
 function CustomAlert({ type, message, onClose }: { type: 'success' | 'error', message: string, onClose: () => void }) {
   const isErr = type === 'error';
@@ -68,31 +23,13 @@ function CustomAlert({ type, message, onClose }: { type: 'success' | 'error', me
 }
 
 function RoleBadge({ role }: { role: string }) {
-  const styles: Record<string, any> = { 
+  const styles: Record<string, any> = {
     SUPER_ADMIN: { bg: 'rgba(168,85,247,0.1)', color: '#C084FC', border: 'rgba(168,85,247,0.2)' },
     ADMIN: { bg: 'rgba(59,130,246,0.1)', color: '#60A5FA', border: 'rgba(59,130,246,0.2)' },
     SUPPLIER: { bg: 'rgba(52,211,153,0.1)', color: '#34D399', border: 'rgba(52,211,153,0.2)' }
   };
   const s = styles[role] || styles.SUPPLIER;
   return <span style={{ display: 'inline-flex', padding: '4px 10px', borderRadius: 6, background: s.bg, border: `1px solid ${s.border}`, color: s.color, fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{role.replace('_', ' ')}</span>;
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const configs: Record<string, any> = {
-    VERIFIED: { bg: 'rgba(52, 211, 153, 0.1)', color: '#34D399', border: 'rgba(52, 211, 153, 0.2)' },
-    LIVE: { bg: 'rgba(52, 211, 153, 0.1)', color: '#34D399', border: 'rgba(52, 211, 153, 0.2)' },
-    PENDING_APPROVAL: { bg: 'rgba(251, 191, 36, 0.1)', color: '#FBBF24', border: 'rgba(251, 191, 36, 0.2)' },
-    UNDER_REVIEW: { bg: 'rgba(251, 191, 36, 0.1)', color: '#FBBF24', border: 'rgba(251, 191, 36, 0.2)' },
-    SUBMITTED: { bg: 'rgba(251, 191, 36, 0.1)', color: '#FBBF24', border: 'rgba(251, 191, 36, 0.2)' },
-    REJECTED: { bg: 'rgba(248, 113, 113, 0.1)', color: '#F87171', border: 'rgba(248, 113, 113, 0.2)' },
-    SUSPENDED: { bg: 'rgba(248, 113, 113, 0.1)', color: '#F87171', border: 'rgba(248, 113, 113, 0.2)' }
-  };
-  const config = configs[status] || { bg: 'rgba(255, 255, 255, 0.05)', color: 'rgba(255,255,255,0.5)', border: 'rgba(255, 255, 255, 0.1)' };
-  return (
-    <span style={{ display: 'inline-flex', padding: '4px 10px', borderRadius: 6, background: config.bg, border: `1px solid ${config.border}`, color: config.color, fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-      {status.replace(/_/g, ' ')}
-    </span>
-  );
 }
 
 export default function UserManagementPage() {
@@ -181,31 +118,28 @@ export default function UserManagementPage() {
         
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
-      
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#050505' }}>
-        {currentUser?.role === 'SUPER_ADMIN' ? (
-          <SuperAdminSidebar active="users" />
-        ) : (
-          <AdminSidebar />
-        )}
+
+      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-page)' }}>
+        <Sidebar active="users" />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          {/* HEADER */}
-          <header style={{ position: 'relative', height: 54, background: '#050505', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
-             {/* CENTERED ADMIN TEXT */}
-              
-             <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.3)'}>
-               <ArrowLeft size={14} /> Back
-             </button>
-             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-               <Search size={14} color="rgba(255,255,255,0.3)" />
-               <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)' }}>User Access Control</span>
-             </div>
-          </header>
+          <DashboardHeader
+            centerText="USER MANAGEMENT"
+            leftContent={
+              <button
+                onClick={() => router.back()}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'color 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.color = 'white'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+              >
+                <ArrowLeft size={14} /> Back
+              </button>
+            }
+          />
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
             <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-              
+
               {error && <CustomAlert type="error" message={error} onClose={() => setError('')} />}
               {success && <CustomAlert type="success" message={success} onClose={() => setSuccess('')} />}
 
@@ -214,8 +148,8 @@ export default function UserManagementPage() {
                   <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 700, color: 'white', letterSpacing: '-0.02em', marginBottom: 4 }}>User Management</h1>
                   <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Create admins, manage roles, and control account access.</p>
                 </div>
-                <button 
-                  onClick={() => setShowCreate(!showCreate)} 
+                <button
+                  onClick={() => setShowCreate(!showCreate)}
                   style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 999, fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer', border: showCreate ? '1px solid rgba(255,255,255,0.1)' : 'none', background: showCreate ? 'rgba(255,255,255,0.05)' : '#2563EB', color: 'white', transition: 'all 0.2s' }}
                 >
                   {showCreate ? <><X size={16} /> Cancel</> : <><Plus size={16} /> Create Admin</>}

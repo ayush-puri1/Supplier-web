@@ -59,52 +59,9 @@ function useCountdown(startMs: number, limitMs = 15 * 60 * 1000) {
   return { display, isUrgent, expired };
 }
 
-/* ══════════════════════════════════════════════
-   SIDEBAR
-══════════════════════════════════════════════ */
-function Sidebar() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-  const navItems = [
-    { label: 'Dashboard', icon: <LayoutDashboard size={16} />, href: '/dashboard/supplier', active: true },
-    { label: 'My Products', icon: <Package size={16} />, href: '/dashboard/supplier/products', active: false },
-    { label: 'Business Profile', icon: <User size={16} />, href: '/dashboard/supplier/profile', active: false },
-    { label: 'Notifications', icon: <Bell size={16} />, href: '/dashboard/supplier/notifications', active: false },
-    { label: 'Settings', icon: <Settings size={16} />, href: '/dashboard/supplier/settings', active: false },
-  ];
-  return (
-    <aside style={{ width: 220, flexShrink: 0, background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
-        <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
-          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>D</span>
-        </div>
-        <div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
-          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>B2B Portal</div>
-        </div>
-      </Link>
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
-        {navItems.map(item => (
-          <Link key={item.label} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 12px', borderRadius: 9, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: item.active ? 600 : 400, color: item.active ? 'white' : 'rgba(255,255,255,0.38)', background: item.active ? 'rgba(37,99,235,0.14)' : 'transparent', borderLeft: item.active ? '2px solid #60A5FA' : '2px solid transparent', transition: 'all 0.2s' }}>
-            <span style={{ color: item.active ? '#60A5FA' : 'rgba(255,255,255,0.28)', flexShrink: 0 }}>{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
-        {user && (
-          <div style={{ padding: '8px 12px', borderRadius: 9, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 8 }}>
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{user?.email || 'supplier@delraw.com'}</p>
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{user?.role?.replace('_', ' ') || 'SUPPLIER'}</p>
-          </div>
-        )}
-        <button onClick={() => { logout?.(); router.push('/login'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(248,113,113,0.65)', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%' }}>
-          <LogOut size={15} /> Sign Out
-        </button>
-      </div>
-    </aside>
-  );
-}
+/* ── Shared Components ── */
+import Sidebar from '@/components/Sidebar';
+import DashboardHeader from '@/components/DashboardHeader';
 
 /* ══════════════════════════════════════════════
    ORDER TIMER CHIP
@@ -477,39 +434,19 @@ export default function SupplierDashboard() {
       <ToastContainer toasts={toasts} onDismiss={id => setToasts(prev => prev.filter(t => t.id !== id))} />
 
       <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
-        <Sidebar />
+        <Sidebar active="dashboard" />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          {/* HEADER */}
-          <header style={{ height: 54, background: '#0A0A0A', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <DashboardHeader 
+            centerText="SUPPLIER PORTAL"
+            leftContent={
               <StoreToggle open={storeOpen} onToggle={() => {
                 const next = !storeOpen;
                 setStoreOpen(next);
                 pushToast(next ? 'success' : 'warning', next ? 'Store is now Open for orders.' : 'Store is Closed — no new orders accepted.');
               }} />
-              <div style={{ position: 'relative' }}>
-                <Search size={13} color="rgba(255,255,255,0.28)" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                <input className="search-input" placeholder="Search orders..." />
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Link href="/dashboard/supplier/notifications" style={{ position: 'relative', textDecoration: 'none' }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-                >
-                  <Bell size={14} color="rgba(255,255,255,0.65)" />
-                </div>
-                {pendingCount > 0 && (
-                  <span style={{ position: 'absolute', top: -3, right: -3, width: 16, height: 16, borderRadius: '50%', background: '#3B82F6', fontSize: 9, fontWeight: 700, color: 'white', fontFamily: "'Syne', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #0A0A0A' }}>{pendingCount}</span>
-                )}
-              </Link>
-              <Link href="/dashboard/supplier/profile" style={{ width: 32, height: 32, borderRadius: '50%', background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 10px rgba(37,99,235,0.45)', textDecoration: 'none' }}>
-                <User size={14} color="white" />
-              </Link>
-            </div>
-          </header>
+            }
+          />
 
           {/* CONTENT */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px 60px' }}>
