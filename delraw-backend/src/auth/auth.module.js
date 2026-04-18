@@ -26,4 +26,4 @@ import { SessionService } from './session.service';
   controllers: [AuthController],
   exports: [AuthService, SessionService],
 })
-export class AuthModule {}
+export class AuthModule { }

@@ -12,96 +12,25 @@ import {
   UserCog, Activity, RefreshCw, Zap, Globe, UserCheck, Ban, Settings, CheckCircle, Crown
 } from 'lucide-react';
 
-/* ══════════════════════════════════════════════════════
-   COLOR PALETTE — Deep Premium Admin
-══════════════════════════════════════════════════════ */
-
-const C = {
-  bg: '#0A0A0A',
-  surface: '#121212',
-  sidebar: '#050505',
-  border: 'rgba(255,255,255,0.06)',
-  accent:   '#3B82F6',
-  accentLt: '#93C5FD',
-  muted:    'rgba(148,175,210,0.15)',
-  text:     '#F1F5F9',
-  textDim:  '#94A3B8',
-  green:    '#10B981',
-  amber:    '#F59E0B',
-  red:      '#EF4444',
-  purple:   '#8B5CF6',
-  teal:     '#06B6D4',
-};
-
-/* ── Sidebar ── */
-export function SuperAdminSidebar({ active }: { active: string }) {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-  const navItems = [
-    { label: 'Command Center', icon: <LayoutDashboard size={15} />, href: '/dashboard/super-admin', key: 'home' },
-    { label: 'User Control', icon: <UserCog size={15} />, href: '/dashboard/admin/users', key: 'users' },
-    { label: 'Supplier Pipeline', icon: <Users size={15} />, href: '/dashboard/admin/suppliers', key: 'suppliers' },
-    { label: 'Product Moderation', icon: <Package size={15} />, href: '/dashboard/admin/products', key: 'products' },
-    { label: 'Analytics', icon: <BarChart3 size={15} />, href: '/dashboard/admin/analytics', key: 'analytics' },
-    { label: 'Audit Logs', icon: <History size={15} />, href: '/dashboard/admin/audit-logs', key: 'audit' },
-    { label: 'System Config', icon: <Settings size={15} />, href: '/dashboard/super-admin/config', key: 'config' },
-    { label: 'Admin Management', icon: <Crown size={15} />, href: '/dashboard/super-admin/admin-management', key: 'admin_mgmt' },
-    { label: 'Admin Portal', icon: <Shield size={15} />, href: '/dashboard/admin', key: 'admin' },
-  ];
-  return (
-    <aside style={{ width: 232, flexShrink: 0, background: C.sidebar, borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '24px 12px 20px' }}>
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 32, paddingLeft: 6 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, #2A4E80, ${C.accent})`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 18px rgba(59,130,246,0.3)`, flexShrink: 0 }}>
-          <Shield size={15} color="white" />
-        </div>
-        <div>
-          <div style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 800, color: C.text, lineHeight: 1 }}>Delraw</div>
-          <div style={{ fontFamily: "var(--font-body)", fontSize: 7.5, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: C.accent, marginTop: 3 }}>Super Admin</div>
-        </div>
-      </Link>
-
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-        {navItems.map(item => {
-          const isActive = item.key === active;
-          return (
-            <Link key={item.label} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 9, textDecoration: 'none', fontFamily: "var(--font-body)", fontSize: 12.5, fontWeight: isActive ? 600 : 400, color: isActive ? C.text : C.textDim, background: isActive ? `rgba(255,255,255,0.06)` : 'transparent', transition: 'all 0.2s' }}>
-              <span style={{ color: isActive ? C.accent : 'rgba(255,255,255,0.2)', flexShrink: 0 }}>{item.icon}</span>
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
-        {user && (
-          <div style={{ padding: '10px 12px', borderRadius: 9, background: `rgba(255,255,255,0.02)`, border: `1px solid ${C.border}`, marginBottom: 8 }}>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email || 'admin@delraw.com'}</p>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 8.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.textDim, marginTop: 2 }}>Platform Lead</p>
-          </div>
-        )}
-        <button onClick={() => { logout?.(); router.push('/login'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, fontFamily: "var(--font-body)", fontSize: 12.5, color: 'rgba(255,255,255,0.4)', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', transition: 'all 0.2s' }}>
-          <LogOut size={14} /> Sign Out
-        </button>
-      </div>
-    </aside>
-  );
-}
+// Shared Components
+import Sidebar from '@/components/Sidebar';
+import DashboardHeader from '@/components/DashboardHeader';
 
 /* ── Metric Card ── */
-function MetricCard({ title, value, subtitle, icon: Icon, trend, accent = C.accent }: any) {
+function MetricCard({ title, value, subtitle, icon: Icon, trend, accent = 'var(--primary)' }: any) {
   return (
-    <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, padding: '24px 22px', position: 'relative', overflow: 'hidden', transition: 'all 0.3s' }}>
+    <div style={{ background: 'var(--bg-surface)', borderRadius: 16, border: `1px solid var(--border)`, padding: '24px 22px', position: 'relative', overflow: 'hidden', transition: 'all 0.3s' }}>
       <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${accent}10 0%, transparent 70%)` }} />
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: `${accent}15`, border: `1px solid ${accent}25`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon size={18} color={accent} />
         </div>
         {trend && (
-          <span style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, color: trend.startsWith('+') ? C.green : C.red, background: 'rgba(255,255,255,0.04)', padding: '4px 10px', borderRadius: 8 }}>{trend}</span>
+          <span style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, color: trend.startsWith('+') ? '#10B981' : '#EF4444', background: 'rgba(255,255,255,0.04)', padding: '4px 10px', borderRadius: 8 }}>{trend}</span>
         )}
       </div>
-      <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{title}</p>
-      <p style={{ fontFamily: "var(--font-heading)", fontSize: 32, fontWeight: 800, color: C.text, lineHeight: 1, letterSpacing: '-0.02em' }}>{value}</p>
+      <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{title}</p>
+      <p style={{ fontFamily: "var(--font-heading)", fontSize: 32, fontWeight: 800, color: 'white', lineHeight: 1, letterSpacing: '-0.02em' }}>{value}</p>
       {subtitle && <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 8 }}>{subtitle}</p>}
     </div>
   );
@@ -147,7 +76,6 @@ function PortalNotification({ message, type, visible, onHide }: any) {
 function SuperAdminContent() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [notification, setNotification] = useState<{msg:string, show:boolean, type:string}>({ msg: '', show: false, type: 'success' });
   const [platformToggles, setPlatformToggles] = useState({
     maintenance: false,
@@ -166,11 +94,6 @@ function SuperAdminContent() {
     triggerNotify(`${action} completed successfully.`, 'success');
   };
 
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const load = useCallback(async () => {
     try {
       const statsData = await fetchWithAuth('/admin/stats').catch(() => ({}));
@@ -180,143 +103,136 @@ function SuperAdminContent() {
 
   useEffect(() => { load(); }, [load]);
 
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg-page)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
-        :root { --font-heading:'Newsreader',serif; --font-body:'DM Sans',sans-serif; }
-        *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:var(--font-body); background:${C.bg}; color:${C.text}; -webkit-font-smoothing:antialiased; }
-        ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
-        @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .sa-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
-      `}</style>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-page)' }}>
+      <Sidebar active="super_admin_home" />
 
-      <div style={{ display: 'flex', minHeight: '100vh', background: C.bg }}>
-        <SuperAdminSidebar active="home" />
-
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          {/* HEADER */}
-          <header style={{ height: 54, background: C.sidebar, borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <DashboardHeader 
+          centerText="SUPER ADMIN" 
+          leftContent={
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <StatusDot color={C.green} />
-              <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: C.textDim, fontWeight: 500 }}>Global Systems Status: Optimal</span>
+              <StatusDot color="#10B981" />
+              <span style={{ fontSize: 12, color: 'var(--text-dim)', fontWeight: 500 }}>Global Systems Optimal</span>
             </div>
-            <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 900, color: C.accent, letterSpacing: '0.22em' }}>COMMAND CENTRE</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-               <span style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: C.textDim, fontVariantNumeric: 'tabular-nums' }}>
-                {currentTime.toLocaleTimeString('en-US', { hour12: false })}
-              </span>
+          }
+        />
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '40px 48px' }}>
+          <div style={{ maxWidth: 1300, margin: '0 auto' }} className="animate-fade-up">
+            
+            <div style={{ marginBottom: 48 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <div style={{ height: 1, width: 40, background: 'var(--primary)' }} />
+                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--primary)' }}>Platform Governance</span>
+              </div>
+              <h1 style={{ fontSize: 42, color: 'white', letterSpacing: '-0.04em', lineHeight: 1, fontStyle: 'italic' }}>Command Center</h1>
+              <p style={{ fontSize: 15, color: 'var(--text-dim)', marginTop: 12, maxWidth: 600, lineHeight: 1.6 }}>High-fidelity oversight of market health and platform orchestration.</p>
             </div>
-          </header>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '40px 48px' }}>
-            <div style={{ maxWidth: 1300, margin: '0 auto' }}>
-              
-              <div style={{ marginBottom: 48 }} className="sa-in">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ height: 1, width: 40, background: C.accent }} />
-                  <span style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: C.accent }}>Platform Governance</span>
-                </div>
-                <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 42, fontWeight: 800, color: C.text, letterSpacing: '-0.04em', lineHeight: 1, fontStyle: 'italic' }}>Command Center</h1>
-                <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: C.textDim, marginTop: 12, maxWidth: 600, lineHeight: 1.6 }}>High-fidelity oversight of market health and platform orchestration.</p>
+            {/* METRICS GRID */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }}>
+              <MetricCard title="Market Presence" value={stats?.totalSuppliers ?? '--'} icon={Users} trend="+12.4%" subtitle="Active business entities" />
+              <MetricCard title="Awaiting Verdict" value={stats?.pendingSuppliers ?? '--'} icon={AlertCircle} accent="#F59E0B" subtitle="Suppliers in validation" subtitleColor="rgba(245,158,11,0.4)"/>
+              <MetricCard title="Product Ledger" value={stats?.totalProducts ?? '--'} icon={Package} trend="+4.2%" accent="#8B5CF6" subtitle="Verified SKU inventory" />
+              <MetricCard title="Digital Footprint" value={stats?.totalUsers ?? '--'} icon={Globe} accent="#06B6D4" subtitle="Authenticated users" />
+            </div>
+
+            {/* SYSTEM HEALTH + CONTROLS ROW */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 24, marginBottom: 48 }}>
+              <div style={{ background: 'var(--bg-surface)', borderRadius: 20, border: `1px solid var(--border)`, padding: '32px' }}>
+                  <h2 style={{ fontSize: 24, color: 'white', marginBottom: 24 }}>System Integrity</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                    {[
+                      { name: 'Core Engine', latency: '14ms', status: 'ONLINE', color: '#10B981' },
+                      { name: 'Global DB', latency: '4ms', status: 'ONLINE', color: '#10B981' },
+                      { name: 'Assets (S3)', latency: '32ms', status: 'ONLINE', color: '#10B981' },
+                      { name: 'Notification Hub', latency: '190ms', status: 'DEGRADED', color: '#FBBF24' },
+                    ].map(svc => (
+                      <div key={svc.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: `1px solid var(--border)` }}>
+                          <div>
+                            <p style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{svc.name}</p>
+                            <p style={{ fontSize: 11, color: 'var(--text-dim)' }}>{svc.latency}</p>
+                          </div>
+                          <span style={{ fontSize: 9, fontWeight: 800, color: svc.color }}>{svc.status}</span>
+                      </div>
+                    ))}
+                  </div>
               </div>
-
-              {/* METRICS GRID */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }} className="sa-in">
-                <MetricCard title="Market Presence" value={stats?.totalSuppliers ?? '--'} icon={Users} trend="+12.4%" subtitle="Active business entities" />
-                <MetricCard title="Awaiting Verdict" value={stats?.pendingSuppliers ?? '--'} icon={AlertCircle} accent={C.amber} subtitle="Suppliers in validation" />
-                <MetricCard title="Product Ledger" value={stats?.totalProducts ?? '--'} icon={Package} trend="+4.2%" accent={C.purple} subtitle="Verified SKU inventory" />
-                <MetricCard title="Digital Footprint" value={stats?.totalUsers ?? '--'} icon={Globe} accent={C.teal} subtitle="Authenticated users" />
+              <div style={{ background: `linear-gradient(135deg, #121212 0%, #050505 100%)`, borderRadius: 20, border: `1px solid var(--border)`, padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <Shield size={32} color="var(--primary)" style={{ marginBottom: 24 }} />
+                    <h2 style={{ fontSize: 20, color: 'white', marginBottom: 12 }}>Platform Authority</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.5 }}>Authorized session only. All modifications comply with platform policies.</p>
+                  </div>
+                  <Link href="/dashboard/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px', borderRadius: 12, background: 'var(--primary)', color: 'white', textDecoration: 'none', fontSize: 13, fontWeight: 700, textAlign: 'center', justifyContent: 'center' }}>
+                    Admin Portal <ArrowRight size={14} />
+                  </Link>
               </div>
+            </div>
 
-              {/* SYSTEM HEALTH + CONTROLS ROW */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 24, marginBottom: 48 }} className="sa-in">
-                <div style={{ background: C.surface, borderRadius: 20, border: `1px solid ${C.border}`, padding: '32px' }}>
-                   <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 800, color: C.text, marginBottom: 24 }}>System Integrity</h2>
-                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+            {/* GLOBAL POLICIES SECTION */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <div style={{ background: 'var(--bg-surface)', borderRadius: 20, border: `1px solid var(--border)`, padding: '32px' }}>
+                  <div style={{ marginBottom: 32 }}>
+                    <h2 style={{ fontSize: 28, color: 'white', marginBottom: 8 }}>Infrastructure Orchestration</h2>
+                    <p style={{ fontSize: 14, color: 'var(--text-dim)' }}>Toggle system-wide behaviors and platform entry points.</p>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
                       {[
-                        { name: 'Core Engine', latency: '14ms', status: 'ONLINE' },
-                        { name: 'Global DB', latency: '4ms', status: 'ONLINE' },
-                        { name: 'Assets (S3)', latency: '32ms', status: 'ONLINE' },
-                        { name: 'Notification Hub', latency: '190ms', status: 'DEGRADED' },
-                      ].map(svc => (
-                        <div key={svc.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
-                           <div>
-                             <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, color: C.text }}>{svc.name}</p>
-                             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: C.textDim }}>{svc.latency}</p>
-                           </div>
-                           <span style={{ fontFamily: "var(--font-body)", fontSize: 9, fontWeight: 800, color: svc.status === 'ONLINE' ? C.green : C.amber }}>{svc.status}</span>
-                        </div>
-                      ))}
-                   </div>
-                </div>
-                <div style={{ background: `linear-gradient(135deg, #121212 0%, #050505 100%)`, borderRadius: 20, border: `1px solid ${C.border}`, padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                   <div>
-                      <Shield size={32} color={C.accent} style={{ marginBottom: 24 }} />
-                      <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 12 }}>Platform Authority</h2>
-                      <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: C.textDim, lineHeight: 1.5 }}>Authorized session only. All modifications comply with platform policies.</p>
-                   </div>
-                   <Link href="/dashboard/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px', borderRadius: 12, background: C.accent, color: 'white', textDecoration: 'none', fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, textAlign: 'center', justifyContent: 'center' }}>
-                      Admin Portal <ArrowRight size={14} />
-                   </Link>
-                </div>
-              </div>
-
-              {/* GLOBAL POLICIES SECTION (RE-INTEGRATED) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="sa-in">
-                 <div style={{ background: C.surface, borderRadius: 20, border: `1px solid ${C.border}`, padding: '32px' }}>
-                    <div style={{ marginBottom: 32 }}>
-                      <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 28, fontWeight: 800, color: C.text, marginBottom: 8 }}>Infrastructure orchestration</h2>
-                      <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: C.textDim }}>Toggle system-wide behaviors and platform entry points.</p>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
-                       {[
-                         { key: 'maintenance', label: 'Lockdown Mode', desc: 'Restrict platform to administrators only', danger: true },
-                         { key: 'autoApprove', label: 'Automated Verified', desc: 'Bypass manual audit for local entities', danger: false },
-                         { key: 'registrations', label: 'Onboarding Portal', desc: 'Control visibility of the join module', danger: false },
-                         { key: 'emailNotif', label: 'Dispatch Hub', desc: 'Global SMTP notification broadcasting', danger: false },
-                       ].map(t => {
-                         const val = (platformToggles as any)[t.key];
-                         return (
-                           <div key={t.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
+                        { key: 'maintenance', label: 'Lockdown Mode', desc: 'Restrict platform to administrators only', danger: true },
+                        { key: 'autoApprove', label: 'Automated Verified', desc: 'Bypass manual audit for local entities', danger: false },
+                        { key: 'registrations', label: 'Onboarding Portal', desc: 'Control visibility of the join module', danger: false },
+                        { key: 'emailNotif', label: 'Dispatch Hub', desc: 'Global SMTP notification broadcasting', danger: false },
+                      ].map(t => {
+                        const val = (platformToggles as any)[t.key];
+                        return (
+                          <div key={t.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,0.02)', border: `1px solid var(--border)` }}>
                               <div>
-                                <p style={{ fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 }}>{t.label}</p>
-                                <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: C.textDim }}>{t.desc}</p>
+                                <p style={{ fontSize: 15, fontWeight: 700, color: 'white', marginBottom: 4 }}>{t.label}</p>
+                                <p style={{ fontSize: 12, color: 'var(--text-dim)' }}>{t.desc}</p>
                               </div>
-                              <button onClick={() => setPlatformToggles(prev => ({ ...prev, [t.key]: !val }))} style={{ width: 44, height: 24, borderRadius: 22, background: val ? (t.danger ? C.red : C.accent) : 'rgba(255,255,255,0.1)', position: 'relative', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}>
-                                 <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'white', position: 'absolute', top: 3, left: val ? 23 : 3, transition: 'all 0.2s' }} />
+                              <button onClick={() => setPlatformToggles(prev => ({ ...prev, [t.key]: !val }))} style={{ width: 44, height: 24, borderRadius: 22, background: val ? (t.danger ? '#EF4444' : 'var(--primary)') : 'rgba(255,255,255,0.1)', position: 'relative', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}>
+                                  <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'white', position: 'absolute', top: 3, left: val ? 23 : 3, transition: 'all 0.2s' }} />
                               </button>
-                           </div>
-                         );
-                       })}
-                    </div>
-                 </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
 
-                 {/* DANGER ZONE (RE-INTEGRATED) */}
-                 <div style={{ background: 'rgba(239, 68, 68, 0.03)', borderRadius: 20, border: `1px solid rgba(239, 68, 68, 0.1)`, padding: '32px' }}>
-                    <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 800, color: C.red, marginBottom: 24 }}>System Purge & Reset</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                       {[
-                         { name: 'Invalidate All Sessions', icon: Lock },
-                         { name: 'Flush System Cache', icon: RefreshCw },
-                         { name: 'Reset DNS Routing', icon: Globe },
-                       ].map(action => (
-                         <button onClick={() => handleAction(action.name)} key={action.name} style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '24px', borderRadius: 16, background: 'rgba(239, 68, 68, 0.04)', border: '1px solid rgba(239, 68, 68, 0.08)', cursor: 'pointer', textAlign: 'left' }}>
-                            <action.icon size={20} color={C.red} />
-                            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, color: C.text }}>{action.name}</p>
-                         </button>
-                       ))}
-                    </div>
-                 </div>
-              </div>
-
+                {/* DANGER ZONE */}
+                <div style={{ background: 'rgba(239, 68, 68, 0.03)', borderRadius: 20, border: `1px solid rgba(239, 68, 68, 0.1)`, padding: '32px' }}>
+                  <h2 style={{ fontSize: 24, color: '#EF4444', marginBottom: 24 }}>System Purge & Reset</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                      {[
+                        { name: 'Invalidate All Sessions', icon: Lock },
+                        { name: 'Flush System Cache', icon: RefreshCw },
+                        { name: 'Reset DNS Routing', icon: Globe },
+                      ].map(action => (
+                        <button onClick={() => handleAction(action.name)} key={action.name} style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '24px', borderRadius: 16, background: 'rgba(239, 68, 68, 0.04)', border: '1px solid rgba(239, 68, 68, 0.08)', cursor: 'pointer', textAlign: 'left' }}>
+                          <action.icon size={20} color="#EF4444" />
+                          <p style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{action.name}</p>
+                        </button>
+                      ))}
+                  </div>
+                </div>
             </div>
+
           </div>
         </div>
       </div>
       <PortalNotification message={notification.msg} type={notification.type} visible={notification.show} onHide={() => setNotification(p => ({ ...p, show: false }))} />
-    </>
+    </div>
   );
 }
 

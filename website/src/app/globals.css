@@ -26,25 +26,64 @@
   --slate-700: #334155;
 
   /* Neutral Surface Tokens */
-  --neutral-bg: #0F1117;
-  /* Defined in image 4 */
-  --bg-page: #0F1117;
-  --bg-surface: #161821;
-  /* Slightly lighter than neutral for cards */
-  --bg-sidebar: #0F1117;
-  --bg-input: rgba(255, 255, 255, 0.03);
+  --neutral-bg: #0A0A0A;
+  --bg-page: #0A0A0A;
+  --bg-surface: #121212;
+  --bg-sidebar: #050505;
+  --bg-input: rgba(255, 255, 255, 0.04);
 
   /* Text Tokens */
-  --text-primary: #FFFFFF;
-  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-primary: #F1F5F9;
+  --text-secondary: rgba(255, 255, 255, 0.65);
   --text-muted: rgba(255, 255, 255, 0.4);
-  --text-dim: rgba(255, 255, 255, 0.22);
+  --text-dim: rgba(255, 255, 255, 0.28);
 
   /* Border Tokens */
-  --border: #1E293B;
-  --border-input: #1E293B;
+  --border: rgba(255, 255, 255, 0.05);
+  --border-input: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.12);
 }
+
+/* ══════════════════════════════════════════════
+   SHARED ADMIN UTILITIES
+   ══════════════════════════════════════════════ */
+
+.search-input { 
+  background: var(--bg-input); 
+  border: 1px solid var(--border-input); 
+  border-radius: 8px; 
+  color: white; 
+  font-family: var(--font-body); 
+  font-size: 13px; 
+  padding: 7px 12px 7px 34px; 
+  outline: none; 
+  width: 200px; 
+  transition: all 0.2s; 
+}
+.search-input::placeholder { color: var(--text-dim); }
+.search-input:focus { border-color: rgba(255,255,255, 0.14); width: 240px; }
+
+.admin-table-row { transition: background 0.2s; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.admin-table-row:hover { background: rgba(255,255,255,0.02); }
+
+.action-btn { 
+  background: rgba(255,255,255,0.04); 
+  border: 1px solid rgba(255,255,255,0.08); 
+  color: rgba(255,255,255,0.7); 
+  cursor: pointer; 
+  padding: 6px 12px; 
+  border-radius: 8px; 
+  font-family: var(--font-heading); 
+  font-size: 11px; 
+  font-weight: 700; 
+  transition: all 0.2s; 
+}
+.action-btn:hover { background: rgba(255,255,255,0.08); color: white; }
+.action-btn.approve { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.25); color: #34D399; }
+.action-btn.approve:hover { background: rgba(52,211,153,0.2); }
+.action-btn.reject { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.25); color: #F87171; }
+.action-btn.reject:hover { background: rgba(248,113,113,0.2); }
+
 
 /* Base Resets & Typography mapping */
 * {
