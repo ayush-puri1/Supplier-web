@@ -366,6 +366,7 @@ function FlashOverlay({ visible }: { visible: boolean }) {
    MAIN PAGE
 ══════════════════════════════════════════════ */
 export default function SupplierDashboard() {
+  const { user } = useAuth();
   const [storeOpen, setStoreOpen] = useState(true);
   const [orders, setOrders] = useState<Order[]>(DEMO_ORDERS);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -451,8 +452,12 @@ export default function SupplierDashboard() {
           {/* CONTENT */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px 60px' }}>
             <div style={{ marginBottom: 24 }}>
-              <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 26, fontWeight: 700, color: 'white', letterSpacing: '-0.02em', marginBottom: 4 }}>Supplier Dashboard</h1>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.28)' }}>Manage your orders, inventory, and store operations.</p>
+              <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 26, fontWeight: 700, color: 'white', letterSpacing: '-0.02em', marginBottom: 4 }}>
+                {user?.companyName || 'Supplier Dashboard'}
+              </h1>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.28)' }}>
+                Manage your orders, inventory, and store operations.
+              </p>
             </div>
 
             {/* STAT CARDS */}

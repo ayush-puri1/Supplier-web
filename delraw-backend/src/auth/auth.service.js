@@ -68,6 +68,17 @@ export class AuthService {
         userId: user.id,
         companyName: companyName || 'Pending Setup',
         status: 'DRAFT',
+        address: '',
+        city: '',
+        country: '',
+        gstNumber: '',
+        panNumber: '',
+        leadTimeDays: 0,
+        monthlyCapacity: 0,
+        moq: 0,
+        responseTimeHr: 0,
+        workforceSize: 0,
+        yearEstablished: new Date().getFullYear(),
       },
     });
 
@@ -179,6 +190,17 @@ export class AuthService {
             userId: user.id,
             companyName: companyName || 'Pending Setup',
             status: 'DRAFT',
+            address: '',
+            city: '',
+            country: '',
+            gstNumber: '',
+            panNumber: '',
+            leadTimeDays: 0,
+            monthlyCapacity: 0,
+            moq: 0,
+            responseTimeHr: 0,
+            workforceSize: 0,
+            yearEstablished: new Date().getFullYear(),
           },
         });
       }
@@ -291,10 +313,19 @@ export class AuthService {
       data: { refreshTokenHash, refreshTokenExpiresAt },
     });
 
+    let companyName = null;
+    if (role === 'SUPPLIER') {
+      const supplier = await this.prisma.supplier.findUnique({
+        where: { userId },
+        select: { companyName: true },
+      });
+      companyName = supplier?.companyName;
+    }
+
     return {
       access_token: accessToken,
       refresh_token: rawRefreshToken,
-      user: { id: userId, email, role },
+      user: { id: userId, email, role, companyName },
     };
   }
 

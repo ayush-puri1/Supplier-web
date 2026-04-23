@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { SuperAdminSidebar } from '../page';
+import Sidebar from '@/components/Sidebar';
 import {
   Users, Shield, ShieldCheck, ShieldAlert, ShieldOff,
   UserCog, UserPlus, UserMinus, UserCheck, UserX,
@@ -806,7 +806,7 @@ function AdminManagementContent() {
       `}</style>
 
       <div style={{ display: 'flex', minHeight: '100vh', background: C.bg }}>
-        <SuperAdminSidebar active="admin_mgmt" />
+        <Sidebar active="admin_mgmt" />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           {/* HEADER */}
