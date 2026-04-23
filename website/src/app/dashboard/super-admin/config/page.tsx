@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Check, AlertCircle, Settings, Shield, Save, Terminal, ShieldAlert } from 'lucide-react';
-import { SuperAdminSidebar } from '../page';
+import Sidebar from '@/components/Sidebar';
 
 /* ── Typography & Styles ── */
 const C = {
@@ -110,7 +110,7 @@ export default function SystemConfigPage() {
       `}</style>
       
       <div style={{ display: 'flex', minHeight: '100vh', background: C.bg }}>
-        <SuperAdminSidebar active="config" />
+        <Sidebar active="config" />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           {/* HEADER */}

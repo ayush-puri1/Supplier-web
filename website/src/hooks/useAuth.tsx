@@ -9,6 +9,7 @@ interface User {
     id: string;
     email: string;
     role: 'SUPPLIER' | 'ADMIN' | 'SUPER_ADMIN';
+    companyName?: string;
 }
 
 interface AuthContextType {
@@ -19,7 +20,7 @@ interface AuthContextType {
     loading: boolean;
 }
 
-export const MOCK_MODE = true; // Set to false to use real backend
+export const MOCK_MODE = false; // Set to false to use real backend
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -36,7 +37,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (storedToken && storedUser && storedUser !== 'undefined') {
             setToken(storedToken);
             try {
-                setUser(JSON.parse(storedUser));
+                const parsedUser = JSON.parse(storedUser);
+                setUser(parsedUser);
+
+                // If company name is missing and user is a supplier, try to fetch it
+                if (parsedUser.role === 'SUPPLIER' && !parsedUser.companyName && !MOCK_MODE) {
+                    fetchWithAuth('/supplier/me')
+                        .then(data => {
+                            if (data.companyName) {
+                                const updatedUser = { ...parsedUser, companyName: data.companyName };
+                                setUser(updatedUser);
+                                localStorage.setItem('user', JSON.stringify(updatedUser));
+                            }
+                        })
+                        .catch(err => console.error("Failed to auto-fetch supplier profile", err));
+                }
             } catch (e) {
                 console.error("Failed to parse user from local storage", e);
                 localStorage.removeItem('user');
@@ -48,7 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const mockUser: User = {
                 id: 'mock-id',
                 email: 'mock@delraw.com',
-                role: 'SUPPLIER'
+                role: 'SUPPLIER',
+                companyName: 'Delraw Manufacturing Co.'
             };
             setUser(mockUser);
             localStorage.setItem('token', 'mock-token');

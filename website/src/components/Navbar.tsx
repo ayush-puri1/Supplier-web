@@ -18,7 +18,7 @@ export default function Navbar() {
 
             <div className="flex items-center gap-6">
                 <div className="text-right hidden sm:block">
-                    <p className="text-sm font-medium">{user?.email}</p>
+                    <p className="text-sm font-medium">{user?.companyName || user?.email}</p>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none">Verified {user?.role}</p>
                 </div>
                 <button

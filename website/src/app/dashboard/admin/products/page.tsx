@@ -6,55 +6,9 @@ import Link from 'next/link';
 import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Crown } from 'lucide-react';
-import { SuperAdminSidebar } from '../../super-admin/page';
+import Sidebar from '@/components/Sidebar';
 
-/* ══════════════════════════════════════════════
-   ADMIN SIDEBAR
-══════════════════════════════════════════════ */
-function AdminSidebar() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-  const navItems = [
-    { label: 'Overview', icon: <LayoutDashboard size={16} />, href: '/dashboard/admin', active: false },
-    { label: 'Analytics', icon: <BarChart3 size={16} />, href: '/dashboard/admin/analytics', active: false },
-    { label: 'Suppliers', icon: <Users size={16} />, href: '/dashboard/admin/suppliers', active: false },
-    { label: 'Products', icon: <Package size={16} />, href: '/dashboard/admin/products', active: true },
-    { label: 'Audit Logs', icon: <History size={16} />, href: '/dashboard/admin/audit-logs', active: false },
 
-  ];
-  return (
-    <aside style={{ width: 220, flexShrink: 0, background: '#050505', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
-        <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
-          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "var(--font-heading)" }}>D</span>
-        </div>
-        <div>
-          <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
-          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>Admin Portal</div>
-        </div>
-      </Link>
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
-        {navItems.map(item => (
-          <Link key={item.label} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 12px', borderRadius: 9, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: item.active ? 600 : 400, color: item.active ? 'white' : 'rgba(255,255,255,0.38)', background: item.active ? 'rgba(37,99,235,0.14)' : 'transparent', borderLeft: item.active ? '2px solid #60A5FA' : '2px solid transparent', transition: 'all 0.2s' }}>
-            <span style={{ color: item.active ? '#60A5FA' : 'rgba(255,255,255,0.28)', flexShrink: 0 }}>{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
-        {user && (
-          <div style={{ padding: '8px 12px', borderRadius: 9, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 8 }}>
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email || 'admin@delraw.com'}</p>
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{user?.role?.replace('_', ' ') || 'ADMIN'}</p>
-          </div>
-        )}
-        <button onClick={() => { logout?.(); router.push('/login'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(248,113,113,0.65)', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.1)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-          <LogOut size={15} /> Sign Out
-        </button>
-      </div>
-    </aside>
-  );
-}
 
 function ProductStatusBadge({ status = 'UNKNOWN', size = 'sm' }: { status?: string; size?: 'sm' | 'md' }) {
   const configs: Record<string, { bg: string; color: string; border: string }> = {
@@ -139,11 +93,7 @@ export default function AdminProductsPage() {
       `}</style>
 
       <div style={{ display: 'flex', minHeight: '100vh', background: '#050505' }}>
-        {user?.role === 'SUPER_ADMIN' ? (
-          <SuperAdminSidebar active="products" />
-        ) : (
-          <AdminSidebar />
-        )}
+        <Sidebar active="products" />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
           {/* HEADER */}

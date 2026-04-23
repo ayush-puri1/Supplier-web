@@ -133,7 +133,7 @@ export default function Sidebar({ active }: SidebarProps) {
             <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
                 {user && (
                   <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}`, marginBottom: 12 }}>
-                    <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email || 'user@delraw.com'}</p>
+                    <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.companyName || user?.email || 'user@delraw.com'}</p>
                     <p style={{ fontFamily: "var(--font-body)", fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{user?.role?.replace('_', ' ') || 'USER'}</p>
                   </div>
                 )}

@@ -32,8 +32,25 @@ export class RolesGuard {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    // Check if the user's role matches any of the required roles
-    if (!user || !requiredRoles.includes(user.role)) {
+    if (!user) {
+      throw new ForbiddenException('Access denied: No user found');
+    }
+
+    const roleHierarchy = {
+      SUPPLIER: 0,
+      ADMIN: 1,
+      SUPER_ADMIN: 2,
+    };
+
+    const userRoleValue = roleHierarchy[user.role] ?? -1;
+
+    // A user can access if their role value is >= the value of any required role
+    const isAuthorized = requiredRoles.some((role) => {
+      const requiredValue = roleHierarchy[role] ?? 999; // If unknown role, default to very high requirement
+      return userRoleValue >= requiredValue;
+    });
+
+    if (!isAuthorized) {
       throw new ForbiddenException('Access denied: Insufficient permissions');
     }
 
