@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 @Schema({ timestamps: true, collection: 'audit_logs' })
-export class AuditLog extends Document {
+export class AuditLog {
   @Prop({ type: String, required: true, index: true })
   logId;
 

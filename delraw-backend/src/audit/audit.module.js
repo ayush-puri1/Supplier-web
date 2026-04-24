@@ -12,7 +12,7 @@ import { AuditLog, AuditLogSchema } from './audit_log.schema';
 @Module({
   imports: [
     PrismaModule,
-    MongooseModule.forFeature([{ name: AuditLog.name, schema: AuditLogSchema }]),
+    MongooseModule.forFeature([{ name: 'AuditLog', schema: AuditLogSchema }]),
   ],
   providers: [AuditService],
   controllers: [AuditController],

@@ -1,5 +1,4 @@
 import {
-  Bind,
   Controller,
   Inject,
   Get,
@@ -33,8 +32,12 @@ export class AuditController {
    */
   @Get()
   @ApiOperation({ summary: 'Get audit logs with search and pagination' })
-  @Bind(Query('search'), Query('page'), Query('limit'), Req())
-  async findAll(search, page, limit, req) {
+  async findAll(
+    @Query('search') search,
+    @Query('page') page,
+    @Query('limit') limit,
+    @Req() req,
+  ) {
     return this.auditService.findAll(req.user, {
       search,
       page: page ? parseInt(page) : 1,

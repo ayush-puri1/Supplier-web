@@ -11,7 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class AuditService {
   constructor(
-    @InjectModel(AuditLog.name) auditLogModel,
+    @InjectModel('AuditLog') auditLogModel,
     @Inject(PrismaService) prisma
   ) {
     this.auditLogModel = auditLogModel;
@@ -57,6 +57,7 @@ export class AuditService {
     const skip = (page - 1) * limit;
 
     let query = {};
+    console.log(`[AuditService] Finding logs for user: ${actorId} (${role}), Filters:`, filters);
 
     // ROLE HIERARCHY LOGIC
     if (role === 'ADMIN') {
