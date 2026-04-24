@@ -1,10 +1,10 @@
 import {
-  Bind,
   Controller,
   Inject,
   Get,
   Query,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../auth/roles/roles.decorator';
@@ -13,7 +13,7 @@ import { AuditService } from './audit.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 /**
- * Controller for Admin to view and filter system audit logs.
+ * Controller for Admin and Super Admin to view and filter system audit logs.
  * Provides endpoints for oversight of all critical system events.
  */
 @ApiTags('Audit')
@@ -28,61 +28,20 @@ export class AuditController {
 
   /**
    * GET /admin/audit-logs
-   * Returns a paginated list of audit logs with optional filtering.
+   * Returns a paginated list of audit logs with hierarchical filtering.
    */
   @Get()
-  @ApiOperation({ summary: 'Get all audit logs with pagination and filters' })
-  @Bind(
-    Query('action'),
-    Query('actorId'),
-    Query('entityType'),
-    Query('startDate'),
-    Query('endDate'),
-    Query('page'),
-    Query(),
-  )
+  @ApiOperation({ summary: 'Get audit logs with search and pagination' })
   async findAll(
-    action,
-    actorId,
-    entityType,
-    startDate,
-    endDate,
-    page,
-    pagination,
+    @Query('search') search,
+    @Query('page') page,
+    @Query('limit') limit,
+    @Req() req,
   ) {
-    const skip = pagination?.skip || 0;
-    const take = pagination?.take || 20;
-
-    return this.auditService.findAll({
-      action,
-      actorId,
-      entityType,
-      startDate,
-      endDate,
-      skip,
-      take,
-      page: page ? parseInt(page) : undefined,
+    return this.auditService.findAll(req.user, {
+      search,
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 20,
     });
-  }
-
-  /**
-   * GET /admin/audit-logs/recent
-   * Returns the newest logs.
-   */
-  @Get('recent')
-  @ApiOperation({ summary: 'Get recent activity logs' })
-  @Bind(Query('limit'))
-  async getRecent(limit) {
-    return this.auditService.getRecentActivity(limit ? parseInt(limit) : 20);
-  }
-
-  /**
-   * GET /admin/audit-logs/actions
-   * Returns a list of all unique action types recorded in the system.
-   */
-  @Get('actions')
-  @ApiOperation({ summary: 'Get list of distinct actions logged' })
-  async getDistinctActions() {
-    return this.auditService.getDistinctActions();
   }
 }

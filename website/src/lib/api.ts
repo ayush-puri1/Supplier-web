@@ -39,7 +39,8 @@ const processQueue = (error: any, token: string | null = null) => {
 api.interceptors.response.use(
   (response) => {
     // Standard response shape from backend: { success: true, data: ... }
-    return response.data;
+    // We return response.data.data so that callers get the actual payload directly.
+    return response.data?.data !== undefined ? response.data.data : response.data;
   },
   async (error) => {
     const originalRequest = error.config;

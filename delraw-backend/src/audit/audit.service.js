@@ -1,105 +1,109 @@
 import { Injectable, Inject } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { AuditLog } from './audit_log.schema';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
- * Service to handle system audit logging and retrieval.
+ * Service to handle system audit logging and retrieval using MongoDB.
  * Tracks actions performed by users and admins for transparency and debugging.
  */
 @Injectable()
 export class AuditService {
-  constructor(@Inject(PrismaService) prisma) {
+  constructor(
+    @InjectModel('AuditLog') auditLogModel,
+    @Inject(PrismaService) prisma
+  ) {
+    this.auditLogModel = auditLogModel;
     this.prisma = prisma;
   }
 
   /**
-   * Creates a new audit log entry.
-   * @param {Object} params - The log parameters.
-   * @param {string} params.actorId - ID of the user performing the action.
-   * @param {string} [params.actorEmail] - Email of the user.
-   * @param {string} params.action - Description of the action (e.g., 'USER_LOGIN').
-   * @param {string} [params.entityType] - The type of object affected (e.g., 'Product').
-   * @param {string} [params.entityId] - The ID of the object affected.
-   * @param {string} [params.details] - Additional human-readable details.
-   * @param {any} [params.metadata] - JSON data related to the event.
-   * @param {string} [params.ipAddress] - IP address of the requester.
+   * Creates a new audit log entry in MongoDB.
    */
   async log(params) {
     try {
-      await this.prisma.auditLog.create({
-        data: {
-          ...params,
-          entityType: params.entityType || null,
-          entityId: params.entityId || null,
-        },
+      const logId = `LOG-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const newLog = new this.auditLogModel({
+        ...params,
+        logId,
       });
+      await newLog.save();
+
+      // If actor is a supplier, also create a notification
+      if (params.actorRole === 'SUPPLIER' || params.entityType === 'Supplier') {
+        const targetUserId = params.actorId; // Or derive from entityId if needed
+        if (targetUserId) {
+          await this.prisma.notification.create({
+            data: {
+              userId: targetUserId,
+              title: params.action.replace(/_/g, ' '),
+              message: params.details || `Activity recorded: ${params.action}`,
+            },
+          });
+        }
+      }
     } catch (err) {
       console.error('Audit log write failed:', err);
     }
   }
 
   /**
-   * Retrieves audit logs based on filters and pagination.
-   * @param {Object} [filters] - Filter criteria for logs.
+   * Retrieves audit logs based on role-based hierarchy.
    */
-  async findAll(filters) {
-    const take = filters?.take || 20;
-    let skip = filters?.skip || 0;
+  async findAll(user, filters) {
+    const { role, id: actorId } = user;
+    const { search, page = 1, limit = 20 } = filters;
+    const skip = (page - 1) * limit;
 
-    if (filters?.page) {
-      skip = (filters.page - 1) * take;
+    let query = {};
+    console.log(`[AuditService] Finding logs for user: ${actorId} (${role}), Filters:`, filters);
+
+    // ROLE HIERARCHY LOGIC
+    if (role === 'ADMIN') {
+      // Admins see all suppliers AND only their own admin logs
+      query = {
+        $or: [
+          { actorRole: 'SUPPLIER' },
+          { actorId: actorId }
+        ]
+      };
+    } else if (role === 'SUPER_ADMIN') {
+      // Super Admins see everything
+      query = {};
+    } else {
+      // Suppliers see only their own (though they usually use notifications)
+      query = { actorId: actorId };
     }
 
-    const where = {};
-    if (filters?.action) where.action = filters.action;
-    if (filters?.actorId) where.actorId = filters.actorId;
-    if (filters?.entityType) where.entityType = filters.entityType;
-    if (filters?.startDate || filters?.endDate) {
-      where.createdAt = {};
-      if (filters?.startDate) where.createdAt.gte = new Date(filters.startDate);
-      if (filters?.endDate) where.createdAt.lte = new Date(filters.endDate);
+    // SEARCH LOGIC
+    if (search) {
+      query.$and = query.$and || [];
+      query.$and.push({
+        $or: [
+          { logId: { $regex: search, $options: 'i' } },
+          { actorEmail: { $regex: search, $options: 'i' } },
+          { action: { $regex: search, $options: 'i' } },
+          { details: { $regex: search, $options: 'i' } }
+        ]
+      });
     }
 
     const [items, total] = await Promise.all([
-      this.prisma.auditLog.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take,
-      }),
-      this.prisma.auditLog.count({ where }),
+      this.auditLogModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.auditLogModel.countDocuments(query).exec(),
     ]);
-
-    const totalPages = Math.ceil(total / take);
 
     return {
       logs: items,
       total,
-      totalPages,
-      skip,
-      take,
+      totalPages: Math.ceil(total / limit),
+      page,
+      limit,
     };
-  }
-
-  /**
-   * Gets the most recent activity logs.
-   * @param {number} limit - Number of logs to return.
-   */
-  async getRecentActivity(limit = 20) {
-    return this.prisma.auditLog.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
-  }
-
-  /**
-   * Gets a list of unique actions that have been logged.
-   */
-  async getDistinctActions() {
-    const result = await this.prisma.auditLog.findMany({
-      select: { action: true },
-      distinct: ['action'],
-      orderBy: { action: 'asc' },
-    });
-    return result.map((r) => r.action);
   }
 }
