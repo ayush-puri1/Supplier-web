@@ -85,6 +85,7 @@ export class AuthService {
     await this.audit.log({
       actorId: user.id,
       actorEmail: user.email,
+      actorRole: user.role,
       action: 'USER_REGISTERED',
       entityType: 'User',
       entityId: user.id,
@@ -209,6 +210,7 @@ export class AuthService {
     await this.audit.log({
       actorId: updatedUser.id,
       actorEmail: updatedUser.email,
+      actorRole: updatedUser.role,
       action: 'USER_VERIFIED',
       entityType: 'User',
       entityId: updatedUser.id,
@@ -241,6 +243,7 @@ export class AuthService {
     await this.audit.log({
       actorId: user.id,
       actorEmail: user.email,
+      actorRole: user.role,
       action: 'USER_LOGIN',
       entityType: 'User',
       entityId: user.id,
