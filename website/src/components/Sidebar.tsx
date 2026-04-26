@@ -33,6 +33,7 @@ export default function Sidebar({ active }: SidebarProps) {
         { name: 'My Products', href: '/dashboard/supplier/products', icon: Package, key: 'products' },
         { name: 'Business Profile', href: '/dashboard/supplier/profile', icon: Briefcase, key: 'profile' },
         { name: 'Notifications', href: '/dashboard/supplier/notifications', icon: Bell, key: 'notifications' },
+        { name: 'Settings', href: '/dashboard/supplier/settings', icon: Settings, key: 'settings' },
     ];
 
     const adminLinks = [

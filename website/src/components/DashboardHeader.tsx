@@ -10,13 +10,15 @@ interface HeaderProps {
     showAnalytics?: boolean;
     centerText?: string;
     leftContent?: React.ReactNode;
+    onNotificationClick?: () => void;
 }
 
 export default function DashboardHeader({ 
     showSearch = true, 
     showAnalytics = false, 
     centerText,
-    leftContent 
+    leftContent,
+    onNotificationClick
 }: HeaderProps) {
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -116,17 +118,20 @@ export default function DashboardHeader({
 
                 <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)' }} />
                 
-                <div style={{ 
-                    width: 32, 
-                    height: 32, 
-                    borderRadius: 8, 
-                    background: 'rgba(255,255,255,0.04)', 
-                    border: '1px solid rgba(255,255,255,0.07)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    cursor: 'pointer' 
-                }}>
+                <div 
+                    onClick={onNotificationClick}
+                    style={{ 
+                        width: 32, 
+                        height: 32, 
+                        borderRadius: 8, 
+                        background: 'rgba(255,255,255,0.04)', 
+                        border: '1px solid rgba(255,255,255,0.07)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        cursor: 'pointer' 
+                    }}
+                >
                     <Bell size={14} color="rgba(255,255,255,0.65)" />
                 </div>
                 

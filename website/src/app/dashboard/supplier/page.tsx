@@ -31,6 +31,13 @@ interface Toast {
   message: string;
 }
 
+interface NotificationItem {
+  id: string;
+  type: Toast['type'];
+  message: string;
+  time: Date;
+}
+
 /* ══════════════════════════════════════════════
    DEMO DATA
 ══════════════════════════════════════════════ */
@@ -363,6 +370,86 @@ function FlashOverlay({ visible }: { visible: boolean }) {
 }
 
 /* ══════════════════════════════════════════════
+   NOTIFICATION PANEL
+══════════════════════════════════════════════ */
+function NotificationPanel({ 
+  visible, 
+  onClose, 
+  notifications 
+}: { 
+  visible: boolean; 
+  onClose: () => void; 
+  notifications: NotificationItem[] 
+}) {
+  return (
+    <>
+      {/* OVERLAY */}
+      <div 
+        onClick={onClose}
+        style={{ 
+          position: 'fixed', inset: 0, zIndex: 10000, 
+          background: 'rgba(0,0,0,0.4)', 
+          backdropFilter: 'blur(4px)',
+          opacity: visible ? 1 : 0, 
+          pointerEvents: visible ? 'auto' : 'none', 
+          transition: 'opacity 0.4s cubic-bezier(.22,1,.36,1)' 
+        }} 
+      />
+
+      {/* PANEL */}
+      <div style={{ 
+        position: 'fixed', top: 0, right: visible ? 0 : -380, bottom: 0, width: 380, 
+        zIndex: 10001, background: '#121212', borderLeft: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: '-20px 0 60px rgba(0,0,0,0.5)',
+        transition: 'right 0.5s cubic-bezier(.22,1,.36,1)',
+        display: 'flex', flexDirection: 'column'
+      }}>
+        <div style={{ padding: '24px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 20, fontWeight: 700, color: 'white' }}>Notifications</h2>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'rgba(255,255,255,0.28)', marginTop: 2 }}>Current Session Activity</p>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+          {notifications.length === 0 ? (
+            <div style={{ padding: '60px 40px', textAlign: 'center' }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <Bell size={20} color="rgba(255,255,255,0.15)" />
+              </div>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.2)' }}>No activity recorded in this session yet.</p>
+            </div>
+          ) : (
+            notifications.map((n) => (
+              <div key={n.id} style={{ padding: '16px 28px', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', gap: 14 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: n.type === 'success' ? 'rgba(52,211,153,0.1)' : n.type === 'warning' ? 'rgba(248,113,113,0.1)' : 'rgba(37,99,235,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {n.type === 'success' ? <Check size={14} color="#34D399" /> : n.type === 'warning' ? <AlertCircle size={14} color="#F87171" /> : <Zap size={14} color="#60A5FA" />}
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>{n.message}</p>
+                  <p style={{ fontFamily: 'var(--font-num)', fontSize: 10, color: 'rgba(255,255,255,0.22)', marginTop: 6, fontWeight: 600 }}>
+                    {n.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            )).reverse()
+          )}
+        </div>
+
+        <div style={{ padding: '20px 28px', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: 'rgba(255,255,255,0.15)', textAlign: 'center' }}>
+            Notifications are cleared upon session refresh.
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════════
    MAIN PAGE
 ══════════════════════════════════════════════ */
 export default function SupplierDashboard() {
@@ -371,11 +458,14 @@ export default function SupplierDashboard() {
   const [orders, setOrders] = useState<Order[]>(DEMO_ORDERS);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [flash, setFlash] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [sessionNotifications, setSessionNotifications] = useState<NotificationItem[]>([]);
   const toastIdRef = useRef(0);
 
   const pushToast = useCallback((type: Toast['type'], message: string) => {
     const id = String(++toastIdRef.current);
     setToasts(prev => [...prev, { id, type, message }]);
+    setSessionNotifications(prev => [...prev, { id, type, message, time: new Date() }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
   }, []);
 
@@ -433,13 +523,27 @@ export default function SupplierDashboard() {
 
       <FlashOverlay visible={flash} />
       <ToastContainer toasts={toasts} onDismiss={id => setToasts(prev => prev.filter(t => t.id !== id))} />
+      <NotificationPanel 
+        visible={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+        notifications={sessionNotifications}
+      />
 
       <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
         <Sidebar active="dashboard" />
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          <DashboardHeader 
+        <div style={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          minWidth: 0, 
+          overflow: 'hidden',
+          filter: showNotifications ? 'blur(8px)' : 'none',
+          transition: 'filter 0.4s cubic-bezier(.22,1,.36,1)'
+        }}>
+          <DashboardHeader
             centerText="SUPPLIER PORTAL"
+            onNotificationClick={() => setShowNotifications(true)}
             leftContent={
               <StoreToggle open={storeOpen} onToggle={() => {
                 const next = !storeOpen;
