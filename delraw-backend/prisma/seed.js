@@ -1,25 +1,43 @@
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
+const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 
-const prisma = new PrismaClient();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 /**
- * Main seeding function to populate the database with initial admin and sample data.
+ * Production seed — creates ONLY the essential platform bootstrap records:
+ * 1. Super Admin user account
+ * 2. System configuration singleton
+ *
+ * NO fake suppliers, NO mock products, NO test data.
+ * Real suppliers register through the onboarding flow.
  */
 async function main() {
-  console.log('🌱 Starting database seeding...');
+  console.log('🌱 Starting database seed...\n');
 
-  // 1. Create Super Admin
+  // ── 1. Super Admin ──────────────────────────────────────────────
   const adminEmail = 'superadmin@delraw.com';
   const adminPassword = await bcrypt.hash('Admin@123', 10);
 
-  await prisma.user.upsert({
+  const superAdmin = await prisma.user.upsert({
     where: { email: adminEmail },
     update: {
-        password: adminPassword,
-        role: 'SUPER_ADMIN',
-        isActive: true,
-        isEmailVerified: true,
+      password: adminPassword,
+      role: 'SUPER_ADMIN',
+      isActive: true,
+      isEmailVerified: true,
+      adminPermissions: [
+        'MANAGE_SUPPLIERS',
+        'MANAGE_PRODUCTS',
+        'MANAGE_ADMINS',
+        'MANAGE_CONFIG',
+        'VIEW_ANALYTICS',
+        'VIEW_AUDIT_LOGS',
+      ],
     },
     create: {
       email: adminEmail,
@@ -27,108 +45,82 @@ async function main() {
       role: 'SUPER_ADMIN',
       isActive: true,
       isEmailVerified: true,
+      adminPermissions: [
+        'MANAGE_SUPPLIERS',
+        'MANAGE_PRODUCTS',
+        'MANAGE_ADMINS',
+        'MANAGE_CONFIG',
+        'VIEW_ANALYTICS',
+        'VIEW_AUDIT_LOGS',
+      ],
     },
   });
-  console.log(`✅ Super Admin created: ${adminEmail} / Admin@123`);
+  console.log(`✅ Super Admin ready`);
+  console.log(`   Email    : ${adminEmail}`);
+  console.log(`   Password : Admin@123`);
+  console.log(`   Role     : SUPER_ADMIN\n`);
 
-  // 2. Create Sample Suppliers
-  const suppliersData = [
-    { email: 'supplier1@example.com', name: 'Textile Hub', status: 'VERIFIED' },
-    { email: 'supplier2@example.com', name: 'Chemical Corp', status: 'UNDER_REVIEW' },
-    { email: 'supplier3@example.com', name: 'Raw Materials Ltd', status: 'SUBMITTED' },
-  ];
-
-  for (const s of suppliersData) {
-    const hashedPassword = await bcrypt.hash('Supplier@123', 10);
-    await prisma.user.upsert({
-      where: { email: s.email },
-      update: {
-          role: 'SUPPLIER',
-          isActive: true,
-          isEmailVerified: true,
-      },
-      create: {
-        email: s.email,
-        password: hashedPassword,
-        role: 'SUPPLIER',
-        isActive: true,
-        isEmailVerified: true,
-        supplier: {
-          create: {
-            companyName: s.name,
-            gstNumber: '22AAAAA0000A1Z5',
-            address: '123 Business Park',
-            city: 'Mumbai',
-            country: 'India',
-            panNumber: 'ABCDE1234F',
-            yearEstablished: 2010,
-            workforceSize: 50,
-            monthlyCapacity: 10000,
-            moq: 100,
-            leadTimeDays: 15,
-            responseTimeHr: 24,
-            status: s.status,
-          },
-        },
+  // ── 2. Supplier profile for Super Admin (needed for portal access) ──
+  const existingSupplierProfile = await prisma.supplier.findUnique({
+    where: { userId: superAdmin.id },
+  });
+  if (!existingSupplierProfile) {
+    await prisma.supplier.create({
+      data: {
+        userId: superAdmin.id,
+        companyName: 'Delraw Platform',
+        gstNumber: 'PLATFORM0000000',
+        panNumber: 'PLATFORM000P',
+        address: 'Platform HQ',
+        city: 'New Delhi',
+        country: 'India',
+        yearEstablished: 2024,
+        workforceSize: 1,
+        monthlyCapacity: 0,
+        moq: 0,
+        leadTimeDays: 0,
+        responseTimeHr: 0,
+        status: 'VERIFIED',
       },
     });
-    console.log(`✅ Supplier created: ${s.email} / Supplier@123 (${s.name})`);
+    console.log(`✅ Supplier profile linked to Super Admin\n`);
+  } else {
+    console.log(`ℹ️  Supplier profile already exists for Super Admin\n`);
   }
 
-  // 3. Create Sample Products for the first supplier
-  const supplier1 = await prisma.supplier.findFirst({
-    where: { user: { email: 'supplier1@example.com' } },
+  // ── 3. System Config singleton ──────────────────────────────────
+  await prisma.systemConfig.upsert({
+    where: { id: 'singleton' },
+    update: {},
+    create: {
+      id: 'singleton',
+      isMaintenanceMode: false,
+      minTrustScore: 30,
+      defaultTrustScore: 50,
+      maxFailedLogins: 5,
+      defaultSupplierStatus: 'DRAFT',
+      onboardingEnabled: true,
+      productPublishing: true,
+      businessCommission: 10.0,
+      allowNewRegistrations: true,
+      maxProductsPerSupplier: 50,
+      platformName: 'Delraw',
+      supplierAutoApprove: false,
+      supportEmail: 'support@delraw.com',
+    },
   });
+  console.log(`✅ System config initialized`);
+  console.log(`   Commission         : 10%`);
+  console.log(`   Max products/supplier: 50`);
+  console.log(`   Registrations open : yes`);
+  console.log(`   Onboarding enabled : yes\n`);
 
-  if (supplier1) {
-    const existingProducts = await prisma.product.count({ where: { supplierId: supplier1.id } });
-    
-    if (existingProducts === 0) {
-        const productsData = [
-          {
-            name: 'Organic Cotton Fabric',
-            category: 'Textiles',
-            status: 'LIVE',
-            isLive: true,
-          },
-          {
-            name: 'Industrial Polyester',
-            category: 'Textiles',
-            status: 'PENDING_APPROVAL',
-            isLive: false,
-          },
-        ];
-
-        for (const p of productsData) {
-          await prisma.product.create({
-            data: {
-              name: p.name,
-              description: `High quality ${p.name.toLowerCase()} for industrial use.`,
-              category: p.category,
-              specs: { weight: '200gsm', width: '58 inch' },
-              moq: 500,
-              leadTime: 20,
-              price: 5.5,
-              unit: 'meters',
-              status: p.status,
-              isLive: p.isLive,
-              supplierId: supplier1.id,
-              variants: {
-                create: [
-                  { name: 'Red', price: 5.5, stock: 1000 },
-                  { name: 'Blue', price: 5.7, stock: 800 },
-                ],
-              },
-            },
-          });
-        }
-        console.log(`✅ Sample products created for ${supplier1.companyName}`);
-    } else {
-        console.log(`ℹ️ Products already exist for ${supplier1.companyName}, skipping...`);
-    }
-  }
-
-  console.log('✨ Database seeding successfully complete!');
+  console.log('✨ Seed complete — platform is ready.\n');
+  console.log('─────────────────────────────────────────────');
+  console.log('  Login at http://localhost:3000/login');
+  console.log(`  Email    : ${adminEmail}`);
+  console.log(`  Password : Admin@123`);
+  console.log('─────────────────────────────────────────────\n');
 }
 
 main()
@@ -138,4 +130,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

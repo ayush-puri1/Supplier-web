@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { fetchWithAuth } from '@/lib/api';
+import { fetchWithAuth, getMediaUrl } from '@/lib/api';
 import {
   Package, Plus, Edit2, Trash2, LayoutDashboard,
   User, Bell, Settings, LogOut, Search, Clock, Truck,
@@ -192,7 +192,7 @@ export default function SupplierProductsPage() {
                     {/* Image area */}
                     <div style={{ height: 180, background: 'rgba(255,255,255,0.03)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                       {p.images?.[0] ? (
-                        <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={getMediaUrl(p.images[0])} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <Package size={36} color="rgba(255,255,255,0.1)" />
                       )}

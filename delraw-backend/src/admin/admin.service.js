@@ -5,10 +5,12 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { MailService } from '../mail/mail.service';
+import { NotificationService } from '../notifications/notifications.service';
 
 /**
  * Service for overseeing the entire platform.
@@ -21,15 +23,20 @@ export class AdminService {
    * @param {PrismaService} prisma
    * @param {AuditService} audit
    * @param {MailService} mail
+   * @param {NotificationService} notifications
    */
   constructor(
     @Inject(PrismaService) prisma,
     @Inject(AuditService) audit,
     @Inject(MailService) mail,
+    @Inject(NotificationService) notifications,
+    @InjectModel('AuditLog') auditLogModel,
   ) {
     this.prisma = prisma;
     this.audit = audit;
     this.mail = mail;
+    this.notifications = notifications;
+    this.auditLogModel = auditLogModel;
   }
 
   /**
@@ -38,7 +45,7 @@ export class AdminService {
   get supplierInclude() {
     return {
       user: {
-        select: { email: true, role: true, createdAt: true, isActive: true },
+        select: { id: true, email: true, role: true, createdAt: true, isActive: true },
       },
       _count: { select: { products: true, documents: true } },
     };
@@ -204,11 +211,21 @@ export class AdminService {
         result.user.email,
         result.companyName,
       );
+      await this.notifications.create(
+        result.userId,
+        'Supplier Profile Verified',
+        'Congratulations! Your business profile has been verified. You can now start listing products.',
+      );
     } else if (newStatus === 'REJECTED') {
       await this.mail.sendSupplierRejected(
         result.user.email,
         result.companyName,
         rejectionReason || 'No reason provided',
+      );
+      await this.notifications.create(
+        result.userId,
+        'Supplier Profile Rejected',
+        `Your verification request was rejected. Reason: ${rejectionReason || 'Incomplete documentation'}. Please update and resubmit.`,
       );
     }
 
@@ -237,7 +254,7 @@ export class AdminService {
             select: {
               companyName: true,
               id: true,
-              user: { select: { email: true } },
+              user: { select: { id: true, email: true } },
             },
           },
         },
@@ -261,7 +278,7 @@ export class AdminService {
           select: {
             companyName: true,
             id: true,
-            user: { select: { email: true } },
+            user: { select: { id: true, email: true } },
           },
         },
         variants: true,
@@ -314,7 +331,7 @@ export class AdminService {
           select: {
             companyName: true,
             id: true,
-            user: { select: { email: true } },
+            user: { select: { id: true, email: true } },
           },
         },
       },
@@ -322,13 +339,24 @@ export class AdminService {
 
     // Notify the supplier
     const supplierEmail = result.supplier.user.email;
+    const supplierUserId = result.supplier.user.id;
     if (newStatus === 'LIVE') {
       await this.mail.sendProductApproved(supplierEmail, result.name);
+      await this.notifications.create(
+        supplierUserId,
+        'Product Approved',
+        `Your product "${result.name}" has been approved and is now LIVE on the platform.`,
+      );
     } else if (newStatus === 'REJECTED') {
       await this.mail.sendProductRejected(
         supplierEmail,
         result.name,
         rejectionReason || 'No reason provided',
+      );
+      await this.notifications.create(
+        supplierUserId,
+        'Product Rejected',
+        `Your product "${result.name}" was rejected. Reason: ${rejectionReason || 'Does not meet guidelines'}.`,
       );
     }
 
@@ -520,7 +548,7 @@ export class AdminService {
           select: {
             companyName: true,
             id: true,
-            user: { select: { email: true } },
+            user: { select: { id: true, email: true } },
           },
         },
       },
@@ -662,11 +690,11 @@ export class AdminService {
       orderBy: { createdAt: 'asc' },
     });
 
-    // Attach per-admin audit log action count
+    // Attach per-admin audit log action count from MongoDB (not Postgres)
     const withCounts = await Promise.all(
       admins.map(async (admin) => {
-        const actionsCount = await this.prisma.auditLog.count({
-          where: { actorId: admin.id },
+        const actionsCount = await this.auditLogModel.countDocuments({
+          actorId: admin.id,
         });
         return {
           ...admin,
@@ -813,5 +841,40 @@ export class AdminService {
     });
 
     return { message: 'Admin removed successfully' };
+  }
+
+  /**
+   * ADMIN: Retrieves paginated audit logs from MongoDB.
+   * Supports search by action, email, or logId.
+   */
+  async getAuditLogs(page = 1, search = '', take = 20) {
+    const skip = (page - 1) * take;
+    const query = {};
+
+    if (search) {
+      query.$or = [
+        { action: { $regex: search, $options: 'i' } },
+        { actorEmail: { $regex: search, $options: 'i' } },
+        { logId: { $regex: search, $options: 'i' } },
+        { details: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [logs, total] = await Promise.all([
+      this.auditLogModel
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(take)
+        .lean(),
+      this.auditLogModel.countDocuments(query),
+    ]);
+
+    return {
+      logs,
+      total,
+      totalPages: Math.ceil(total / take),
+      currentPage: page,
+    };
   }
 }

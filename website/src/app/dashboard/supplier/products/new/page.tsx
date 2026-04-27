@@ -2,7 +2,7 @@
 
 import React, { useState, MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchWithAuth } from '@/lib/api';
+import { fetchWithAuth, getMediaUrl } from '@/lib/api';
 import AlertBanner from '@/components/ui/AlertBanner';
 import api from '@/lib/api';
 import Link from 'next/link';
@@ -212,7 +212,7 @@ export default function AddProductPage() {
                   <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 12 }}>
                     {images.map((img, i) => (
                       <div key={i} style={{ position: 'relative', width: 100, height: 100, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
-                        <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={getMediaUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: 5, right: 5, width: 22, height: 22, borderRadius: 6, background: 'rgba(0,0,0,0.7)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }}>
                           <X size={11} />
                         </button>

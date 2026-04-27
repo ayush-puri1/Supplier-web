@@ -337,6 +337,12 @@ export class AuthService {
    */
   async logout(token, userId) {
     try {
+      // Fetch user to get email and role for the audit record
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, role: true },
+      });
+
       await this.prisma.user.update({
         where: { id: userId },
         data: { refreshTokenHash: null, refreshTokenExpiresAt: null },
@@ -347,7 +353,6 @@ export class AuthService {
       const decoded = this.jwt.decode(token);
       if (decoded && decoded.exp) {
         const expiresAt = new Date(decoded.exp * 1000);
-        // Blacklist the access token until its natural expiry
         await this.prisma.revokedToken
           .create({
             data: {
@@ -357,11 +362,13 @@ export class AuthService {
               reason: 'User logged out',
             },
           })
-          .catch(() => {}); // Ignore duplicate revocation errors
+          .catch(() => {});
       }
 
       await this.audit.log({
         actorId: userId,
+        actorEmail: user?.email || 'unknown',
+        actorRole: user?.role || 'SUPPLIER',
         action: 'USER_LOGOUT',
         entityType: 'User',
         entityId: userId,
