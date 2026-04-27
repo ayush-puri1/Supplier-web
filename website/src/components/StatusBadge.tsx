@@ -15,28 +15,46 @@ type StatusType =
 interface StatusBadgeProps {
   status: StatusType | string;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-const statusConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-  DRAFT: { label: 'Draft', color: 'text-gray-700', bgColor: 'bg-gray-100' },
-  SUBMITTED: { label: 'Submitted', color: 'text-blue-700', bgColor: 'bg-blue-100' },
-  UNDER_REVIEW: { label: 'Under Review', color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
-  VERIFIED: { label: 'Verified', color: 'text-green-700', bgColor: 'bg-green-100' },
-  CONDITIONAL: { label: 'Conditional', color: 'text-orange-700', bgColor: 'bg-orange-100' },
-  REJECTED: { label: 'Rejected', color: 'text-red-700', bgColor: 'bg-red-100' },
-  SUSPENDED: { label: 'Suspended', color: 'text-gray-900', bgColor: 'bg-gray-300' },
-  PENDING_APPROVAL: { label: 'Pending Approval', color: 'text-blue-700', bgColor: 'bg-blue-100' },
-  LIVE: { label: 'Live', color: 'text-green-700', bgColor: 'bg-green-100' },
-  DELISTED: { label: 'Delisted', color: 'text-red-700', bgColor: 'bg-red-100' },
+const getStatusConfig = (status: string) => {
+  switch (status) {
+    case 'VERIFIED': case 'LIVE':
+      return { dot: '#34D399', bg: 'rgba(52,211,153,0.1)', color: '#34D399', label: status };
+    case 'SUBMITTED': case 'PENDING_APPROVAL': case 'UNDER_REVIEW':
+      return { dot: '#FBBF24', bg: 'rgba(251,191,36,0.1)', color: '#FBBF24', label: 'PENDING' };
+    case 'REJECTED': case 'DELISTED': case 'SUSPENDED':
+      return { dot: '#F87171', bg: 'rgba(248,113,113,0.1)', color: '#F87171', label: status };
+    default:
+      return { dot: '#60A5FA', bg: 'rgba(96,165,250,0.1)', color: '#60A5FA', label: status };
+  }
 };
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = '' }) => {
-  const config = statusConfig[status as string] || { label: status, color: 'text-gray-700', bgColor: 'bg-gray-100' };
+const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = '', style }) => {
+  const sc = getStatusConfig(status as string);
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide shadow-sm ${config.color} ${config.bgColor} ${className}`}>
-      <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current opacity-70"></span>
-      {config.label}
+    <span 
+      className={className}
+      style={{ 
+        display: 'inline-flex', 
+        alignItems: 'center', 
+        gap: 5, 
+        padding: '4px 10px', 
+        borderRadius: 999, 
+        fontFamily: "'DM Sans', sans-serif", 
+        fontSize: 9, 
+        fontWeight: 700, 
+        letterSpacing: '0.07em', 
+        textTransform: 'uppercase', 
+        color: sc.color, 
+        background: sc.bg,
+        ...style
+      }}
+    >
+      <span style={{ width: 4, height: 4, borderRadius: '50%', background: sc.dot, boxShadow: `0 0 5px ${sc.dot}` }} />
+      {sc.label}
     </span>
   );
 };

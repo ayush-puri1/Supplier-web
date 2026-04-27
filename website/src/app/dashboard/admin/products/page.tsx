@@ -1,279 +1,289 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { fetchWithAuth } from "@/lib/api";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { fetchWithAuth } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Crown } from 'lucide-react';
+import Sidebar from '@/components/Sidebar';
 
-const STATUS_TABS = ['ALL', 'PENDING_APPROVAL', 'LIVE', 'REJECTED', 'DELISTED', 'DRAFT'] as const;
 
-const STATUS_COLORS: Record<string, string> = {
-    DRAFT: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
-    PENDING_APPROVAL: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-    LIVE: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-    REJECTED: 'bg-red-500/10 text-red-500 border-red-500/20',
-    DELISTED: 'bg-zinc-800/50 text-zinc-300 border-zinc-600/30',
-};
 
+function ProductStatusBadge({ status = 'UNKNOWN', size = 'sm' }: { status?: string; size?: 'sm' | 'md' }) {
+  const configs: Record<string, { bg: string; color: string; border: string }> = {
+    LIVE: { bg: 'rgba(52, 211, 153, 0.1)', color: '#34D399', border: 'rgba(52, 211, 153, 0.2)' },
+    PENDING_APPROVAL: { bg: 'rgba(251, 191, 36, 0.1)', color: '#FBBF24', border: 'rgba(251, 191, 36, 0.2)' },
+    REJECTED: { bg: 'rgba(248, 113, 113, 0.1)', color: '#F87171', border: 'rgba(248, 113, 113, 0.2)' },
+    DELISTED: { bg: 'rgba(156, 163, 175, 0.1)', color: '#9CA3AF', border: 'rgba(156, 163, 175, 0.2)' },
+    DRAFT: { bg: 'rgba(255, 255, 255, 0.05)', color: 'rgba(255,255,255,0.5)', border: 'rgba(255, 255, 255, 0.1)' },
+    UNKNOWN: { bg: 'rgba(255, 255, 255, 0.05)', color: 'rgba(255,255,255,0.5)', border: 'rgba(255, 255, 255, 0.1)' },
+  };
+  const config = configs[status] || configs.UNKNOWN;
+
+  return (
+    <span style={{
+      display: 'inline-flex', padding: size === 'md' ? '6px 14px' : '4px 10px',
+      borderRadius: 6, background: config.bg, border: `1px solid ${config.border}`,
+      color: config.color, fontFamily: 'var(--font-body)', fontSize: size === 'md' ? 12 : 10,
+      fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase'
+    }}>
+      {status.replace(/_/g, ' ')}
+    </span>
+  );
+}
+
+const STATUS_TABS = ['ALL', 'PENDING_APPROVAL', 'LIVE', 'REJECTED', 'DELISTED'] as const;
 const TRANSITION_MAP: Record<string, { label: string; status: string; color: string }[]> = {
-    PENDING_APPROVAL: [
-        { label: '✅ Approve (Go Live)', status: 'LIVE', color: 'bg-emerald-500 hover:bg-emerald-600' },
-        { label: '❌ Reject', status: 'REJECTED', color: 'bg-red-500 hover:bg-red-600' },
-    ],
-    LIVE: [{ label: '🚫 Delist', status: 'DELISTED', color: 'bg-zinc-700 hover:bg-zinc-800' }],
-    DELISTED: [{ label: '🔄 Re-list (Go Live)', status: 'LIVE', color: 'bg-emerald-500 hover:bg-emerald-600' }],
-    REJECTED: [{ label: '🔄 Re-submit for Review', status: 'PENDING_APPROVAL', color: 'bg-amber-500 hover:bg-amber-600' }],
-    DRAFT: [],
+  PENDING_APPROVAL: [{ label: '✅ Approve (Go Live)', status: 'LIVE', color: '#10B981' }, { label: '❌ Reject', status: 'REJECTED', color: '#EF4444' }],
+  LIVE: [{ label: '🚫 Delist', status: 'DELISTED', color: 'rgba(255,255,255,0.2)' }],
+  DELISTED: [{ label: '🔄 Re-list', status: 'LIVE', color: '#3B82F6' }],
+  REJECTED: [{ label: '🔄 Re-submit', status: 'PENDING_APPROVAL', color: '#F59E0B' }],
+  DRAFT: [],
 };
 
-export default function AdminProducts() {
-    const searchParams = useSearchParams();
-    const initialFilter = searchParams.get('filter') || 'ALL';
+export default function AdminProductsPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('ALL');
+  const [selected, setSelected] = useState<any>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
-    const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState(initialFilter);
-    const [selectedProduct, setSelectedProduct] = useState<any>(null);
-    const [detailLoading, setDetailLoading] = useState(false);
-    const [actionLoading, setActionLoading] = useState(false);
+  const loadProducts = async () => {
+    try { const url = activeTab === 'ALL' ? '/admin/products' : `/admin/products?status=${activeTab}`; const data = await fetchWithAuth(url); setProducts(Array.isArray(data) ? data : []); } catch (err) { console.error(err); } finally { setLoading(false); }
+  };
 
-    const loadProducts = async () => {
-        try {
-            const url = activeTab === 'ALL' ? '/admin/products' : `/admin/products?status=${activeTab}`;
-            const data = await fetchWithAuth(url);
-            setProducts(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+  useEffect(() => { setLoading(true); loadProducts(); }, [activeTab]);
 
-    useEffect(() => { setLoading(true); loadProducts(); }, [activeTab]);
+  const loadDetail = async (id: string) => {
+    setDetailLoading(true);
+    try { const data = await fetchWithAuth(`/admin/products/${id}`); setSelected(data); } catch (err) { console.error(err); } finally { setDetailLoading(false); }
+  };
 
-    const loadProductDetail = async (id: string) => {
-        setDetailLoading(true);
-        try {
-            const data = await fetchWithAuth(`/admin/products/${id}`);
-            setSelectedProduct(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setDetailLoading(false);
-        }
-    };
+  const handleUpdate = async (id: string, status: string) => {
+    let rejectionReason = '';
+    if (status === 'REJECTED') { rejectionReason = prompt('Rejection reason:') || ''; if (!rejectionReason) return; }
+    setActionLoading(true);
+    try { await fetchWithAuth(`/admin/products/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, rejectionReason }) }); await loadProducts(); await loadDetail(id); } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); } finally { setActionLoading(false); }
+  };
 
-    const handleUpdateStatus = async (id: string, status: string) => {
-        let rejectionReason = "";
-        if (status === 'REJECTED') {
-            rejectionReason = prompt("Please provide a reason for rejection:") || "";
-            if (!rejectionReason) {
-                alert("Rejection reason is required.");
-                return;
-            }
-        }
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+        :root { --font-heading:'Newsreader',serif; --font-body:'DM Sans',sans-serif; }
+        *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:var(--font-body); background:#0A0A0A; color:white; -webkit-font-smoothing:antialiased; }
+        ::-webkit-scrollbar{width:4px; height:4px;} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+        
+        .tab-button { padding: 10px 20px; border-radius: 999px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+        .tab-button:hover { background: rgba(255,255,255,0.08); color: white; }
+        .tab-button.active { background: #2563EB; border-color: #3B82F6; color: white; box-shadow: 0 0 16px rgba(37,99,235,0.4); }
+        
+        .list-row { transition: all 0.2s; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
+        .list-row:hover { background: rgba(255,255,255,0.02); }
+        .list-row.selected { background: rgba(37,99,235,0.05); }
+        
+        .action-button { padding: 10px 20px; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; color: white; border: none; cursor: pointer; transition: all 0.2s; }
+        .action-button:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+        .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+      `}</style>
 
-        setActionLoading(true);
-        try {
-            await fetchWithAuth(`/admin/products/${id}/status`, {
-                method: 'PATCH',
-                body: JSON.stringify({ status, rejectionReason }),
-            });
-            await loadProducts();
-            await loadProductDetail(id);
-        } catch (err: any) {
-            alert(err?.message || 'Failed to update status');
-        } finally {
-            setActionLoading(false);
-        }
-    };
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#050505' }}>
+        <Sidebar active="products" />
 
-    return (
-        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-            <div>
-                <h1 className="text-3xl font-bold mb-2">Product Moderation</h1>
-                <p className="text-muted-foreground">Review submitted products and ensure marketplace quality.</p>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          {/* HEADER */}
+          <header style={{ position: 'relative', height: 54, background: '#050505', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+            {/* CENTERED ADMIN TEXT */}
+
+            <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}>
+              <ArrowLeft size={14} /> Back
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Search size={14} color="rgba(255,255,255,0.3)" />
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)' }}>Product Database</span>
             </div>
+          </header>
 
-            {/* Status Filter Tabs */}
-            <div className="flex flex-wrap gap-2">
-                {STATUS_TABS.map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => { setActiveTab(tab); setSelectedProduct(null); }}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${activeTab === tab
-                            ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20'
-                            : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-                        }`}
-                    >
-                        {tab.replace('_', ' ')}
-                    </button>
-                ))}
-            </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div style={{ maxWidth: 1400, margin: '0 auto' }}>
 
-            {loading ? (
-                <div className="text-center py-20 opacity-50">Loading products...</div>
-            ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                    {/* Left: Product Table */}
-                    <div className="xl:col-span-2">
-                        {products.length === 0 ? (
-                            <div className="glass rounded-2xl border border-border p-12 text-center text-muted-foreground italic">
-                                No products found with status: {activeTab.replace('_', ' ')}
-                            </div>
-                        ) : (
-                            <div className="glass rounded-2xl border border-border overflow-hidden">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="bg-secondary/50 text-xs uppercase tracking-wider font-bold text-muted-foreground">
-                                            <th className="px-6 py-4">Product</th>
-                                            <th className="px-6 py-4">Supplier</th>
-                                            <th className="px-6 py-4">Category</th>
-                                            <th className="px-6 py-4">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border/50">
-                                        {products.map((p) => (
-                                            <tr
-                                                key={p.id}
-                                                onClick={() => loadProductDetail(p.id)}
-                                                className={`hover:bg-primary/5 transition-colors cursor-pointer ${selectedProduct?.id === p.id ? 'bg-primary/10' : ''}`}
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        {p.images?.[0] ? (
-                                                            <img src={p.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover border border-border" />
-                                                        ) : (
-                                                            <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-xl">📦</div>
-                                                        )}
-                                                        <div>
-                                                            <p className="font-bold text-sm">{p.name}</p>
-                                                            <p className="text-xs text-muted-foreground">₹{p.price?.toLocaleString() ?? '—'}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-sm font-medium">{p.supplier?.companyName}</p>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-xs text-muted-foreground">{p.category}</p>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${STATUS_COLORS[p.status] || ''}`}>
-                                                        {p.status.replace('_', ' ')}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Right: Detail Panel */}
-                    <div>
-                        {detailLoading ? (
-                            <div className="glass rounded-2xl border border-border p-12 text-center opacity-50 animate-pulse">Loading details...</div>
-                        ) : selectedProduct ? (
-                            <div className="glass p-6 rounded-2xl border border-border sticky top-24 animate-in fade-in zoom-in duration-300 space-y-6">
-                                {/* Images */}
-                                {selectedProduct.images?.length > 0 && (
-                                    <div className="flex gap-2 overflow-x-auto pb-2">
-                                        {selectedProduct.images.map((img: string, i: number) => (
-                                            <img key={i} src={img} alt={`Product ${i}`} className="h-24 w-24 rounded-xl object-cover border border-border flex-shrink-0" />
-                                        ))}
-                                    </div>
-                                )}
-
-                                <div>
-                                    <h3 className="text-xl font-bold">{selectedProduct.name}</h3>
-                                    <p className="text-xs text-muted-foreground mt-1">{selectedProduct.supplier?.companyName} • {selectedProduct.supplier?.user?.email}</p>
-                                    <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-bold uppercase border ${STATUS_COLORS[selectedProduct.status] || ''}`}>
-                                        {selectedProduct.status.replace('_', ' ')}
-                                    </span>
-                                    {selectedProduct.status === 'REJECTED' && selectedProduct.rejectionReason && (
-                                        <div className="mt-4 p-4 rounded-xl bg-red-500/5 border border-red-500/10 text-left animate-in fade-in zoom-in duration-300">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Rejection Reason</p>
-                                            <p className="text-sm text-red-700/80 italic">"{selectedProduct.rejectionReason}"</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Description */}
-                                {selectedProduct.description && (
-                                    <section>
-                                        <p className="text-xs font-bold uppercase text-muted-foreground mb-2 tracking-widest">Description</p>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">{selectedProduct.description}</p>
-                                    </section>
-                                )}
-
-                                {/* Pricing & Logistics */}
-                                <section className="p-4 rounded-xl bg-secondary/30 border border-border">
-                                    <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-xs">
-                                        {[
-                                            ['Price', `₹${selectedProduct.price?.toLocaleString() ?? '—'}`],
-                                            ['Unit', selectedProduct.unit],
-                                            ['MOQ', selectedProduct.moq],
-                                            ['Lead Time', `${selectedProduct.leadTime}d`],
-                                            ['Category', selectedProduct.category],
-                                        ].map(([label, val]) => (
-                                            <div key={label as string}>
-                                                <p className="opacity-50 font-bold uppercase text-[10px]">{label}</p>
-                                                <p className="font-medium text-foreground">{val || 'N/A'}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                {/* Variants */}
-                                {selectedProduct.variants?.length > 0 && (
-                                    <section>
-                                        <p className="text-xs font-bold uppercase text-muted-foreground mb-2 tracking-widest">Variants ({selectedProduct.variants.length})</p>
-                                        <div className="space-y-2">
-                                            {selectedProduct.variants.map((v: any) => (
-                                                <div key={v.id} className="p-3 rounded-lg bg-secondary/20 border border-border/50 flex justify-between items-center text-xs">
-                                                    <div>
-                                                        <span className="font-bold">{v.name}</span>
-                                                        {v.sku && <span className="ml-2 text-muted-foreground">SKU: {v.sku}</span>}
-                                                    </div>
-                                                    <div className="text-right">
-                                                        {v.price && <span className="font-bold">₹{v.price.toLocaleString()}</span>}
-                                                        <span className="ml-2 text-muted-foreground">Stock: {v.stock}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </section>
-                                )}
-
-                                {/* Actions */}
-                                <section>
-                                    <p className="text-xs font-bold uppercase text-muted-foreground mb-3 tracking-widest">Actions</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(TRANSITION_MAP[selectedProduct.status] || []).map((t) => (
-                                            <button
-                                                key={t.status}
-                                                disabled={actionLoading}
-                                                onClick={() => handleUpdateStatus(selectedProduct.id, t.status)}
-                                                className={`px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 ${t.color}`}
-                                            >
-                                                {t.label}
-                                            </button>
-                                        ))}
-                                        {(TRANSITION_MAP[selectedProduct.status] || []).length === 0 && (
-                                            <p className="text-xs text-muted-foreground italic">No actions available for this status.</p>
-                                        )}
-                                    </div>
-                                </section>
-                            </div>
-                        ) : (
-                            <div className="h-80 flex items-center justify-center p-12 text-center glass rounded-2xl border border-dashed border-border text-muted-foreground italic text-sm">
-                                Click a product to view details and moderate.
-                            </div>
-                        )}
-                    </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+                <div>
+                  <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 700, color: 'white', letterSpacing: '-0.02em', marginBottom: 4 }}>Product Moderation</h1>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Review submitted products and ensure marketplace quality.</p>
                 </div>
-            )}
+              </div>
+
+              {/* TABS */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
+                {STATUS_TABS.map(tab => (
+                  <button key={tab} className={`tab-button ${activeTab === tab ? 'active' : ''}`} onClick={() => { setActiveTab(tab); setSelected(null); }}>
+                    {tab.replace(/_/g, ' ')}
+                  </button>
+                ))}
+              </div>
+
+              {loading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
+                  <div style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid #3B82F6', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 32 }}>
+
+                  {/* MASTER LIST */}
+                  <div>
+                    {products.length === 0 ? (
+                      <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: '60px 20px', textAlign: 'center' }}>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No products found in this category.</p>
+                      </div>
+                    ) : (
+                      <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Product</th>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Supplier</th>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</th>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(activeTab === 'ALL' ? products : products.filter(p => p.status === activeTab)).map(p => (
+                              <tr key={p.id} onClick={() => loadDetail(p.id)} className={`list-row ${selected?.id === p.id ? 'selected' : ''}`}>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                    {p.images?.[0] ? (
+                                      <img src={p.images[0]} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                    ) : (
+                                      <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Package size={20} color="rgba(255,255,255,0.2)" />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'white', marginBottom: 2 }}>{p.name}</p>
+                                      <p style={{ fontFamily: 'var(--font-num)', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>₹{p.price?.toLocaleString() ?? '—'}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '16px 20px', fontFamily: 'var(--font-body)', fontSize: 13, color: 'white' }}>{p.supplier?.companyName || '—'}</td>
+                                <td style={{ padding: '16px 20px', fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{p.category || '—'}</td>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <ProductStatusBadge status={p.status} />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* DETAIL VIEW */}
+                  <div>
+                    {detailLoading ? (
+                      <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: '60px 20px', textAlign: 'center', position: 'sticky', top: 32 }}>
+                        <div style={{ display: 'inline-block', width: 24, height: 24, border: '2px solid rgba(255,255,255,0.1)', borderTop: '2px solid #3B82F6', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                      </div>
+                    ) : selected ? (
+                      <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: 24, position: 'sticky', top: 32 }}>
+                        {selected.images?.length > 0 && (
+                          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, marginBottom: 20 }}>
+                            {selected.images.map((img: string, i: number) => (
+                              <img key={i} src={img} alt="" style={{ height: 100, minWidth: 100, borderRadius: 12, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                            ))}
+                          </div>
+                        )}
+
+                        <div style={{ marginBottom: 24 }}>
+                          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 700, color: 'white', marginBottom: 6 }}>{selected.name}</h3>
+                          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#60A5FA', marginBottom: 12 }}>{selected.supplier?.companyName}</p>
+                          <ProductStatusBadge status={selected.status} size="md" />
+
+                          {selected.status === 'REJECTED' && selected.rejectionReason && (
+                            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                              <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Rejection Reason</p>
+                              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#FCA5A5', fontStyle: 'italic' }}>&ldquo;{selected.rejectionReason}&rdquo;</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {selected.description && (
+                          <div style={{ marginBottom: 24 }}>
+                            <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Description</p>
+                            <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{selected.description}</p>
+                          </div>
+                        )}
+
+                        <div style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 24 }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                            {[
+                              ['Price', `₹${selected.price?.toLocaleString() ?? '—'}`],
+                              ['Unit', selected.unit],
+                              ['MOQ', selected.moq],
+                              ['Lead Time', `${selected.leadTime}d`],
+                              ['Category', selected.category]
+                            ].map(([l, v]) => (
+                              <div key={l as string}>
+                                <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{l}</p>
+                                <p style={{ fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 600, color: 'white' }}>{v || 'N/A'}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {selected.variants?.length > 0 && (
+                          <div style={{ marginBottom: 24 }}>
+                            <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Variants ({selected.variants.length})</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              {selected.variants.map((v: any) => (
+                                <div key={v.id} style={{ padding: '12px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div>
+                                    <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: 'white' }}>{v.name}</p>
+                                    {v.sku && <p style={{ fontFamily: 'var(--font-num)', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>SKU: {v.sku}</p>}
+                                  </div>
+                                  <div style={{ textAlign: 'right' }}>
+                                    {v.price && <p style={{ fontFamily: 'var(--font-num)', fontSize: 13, fontWeight: 600, color: 'white' }}>₹{v.price.toLocaleString()}</p>}
+                                    <p style={{ fontFamily: 'var(--font-num)', fontSize: 11, color: '#34D399' }}>Stock: {v.stock}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div style={{ paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                          <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Moderation Actions</p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                            {(TRANSITION_MAP[selected.status] || []).map(t => (
+                              <button key={t.status} disabled={actionLoading} onClick={() => handleUpdate(selected.id, t.status)} className="action-button" style={{ background: t.color, flex: 1 }}>
+                                {t.label}
+                              </button>
+                            ))}
+                            {(TRANSITION_MAP[selected.status] || []).length === 0 && (
+                              <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No actions available for this status.</p>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+                    ) : (
+                      <div style={{ background: 'rgba(255,255,255,0.01)', borderRadius: 16, border: '2px dashed rgba(255,255,255,0.05)', height: '100%', minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, textAlign: 'center', position: 'sticky', top: 32 }}>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.3)' }}>Select a product from the list to view details and moderate.</p>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-    );
+      </div>
+    </>
+  );
 }

@@ -1,157 +1,209 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { fetchWithAuth } from "@/lib/api";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { fetchWithAuth } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, TrendingUp, Activity, PieChart, Building2, CheckCircle2, History , Crown } from 'lucide-react';
+import Sidebar from '@/components/Sidebar';
 
-const STATUS_COLORS: Record<string, string> = {
-    DRAFT: 'bg-zinc-500',
-    SUBMITTED: 'bg-amber-500',
-    PENDING_APPROVAL: 'bg-amber-500',
-    UNDER_REVIEW: 'bg-blue-500',
-    VERIFIED: 'bg-emerald-500',
-    LIVE: 'bg-emerald-500',
-    CONDITIONAL: 'bg-orange-500',
-    REJECTED: 'bg-red-500',
-    DELISTED: 'bg-zinc-700',
-    SUSPENDED: 'bg-zinc-800',
+
+
+const SUPPLIER_STATUS_COLORS: Record<string, string> = {
+  DRAFT: '#A1A1AA', SUBMITTED: '#FBBF24', UNDER_REVIEW: '#60A5FA',
+  VERIFIED: '#3B82F6', CONDITIONAL: '#FB923C', REJECTED: '#F87171', SUSPENDED: '#52525B',
+};
+const PRODUCT_STATUS_COLORS: Record<string, string> = {
+  DRAFT: '#A1A1AA', PENDING_APPROVAL: '#FBBF24', LIVE: '#34D399', REJECTED: '#F87171', DELISTED: '#52525B',
 };
 
-export default function AdminAnalytics() {
-    const [data, setData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+function StatusBadge({ status }: { status: string }) {
+  const getStyle = () => {
+    switch (status) {
+      case 'VERIFIED': case 'LIVE': return { dot: '#34D399', bg: 'rgba(52,211,153,0.1)', color: '#34D399', label: status };
+      case 'SUBMITTED': case 'PENDING_APPROVAL': case 'UNDER_REVIEW': return { dot: '#FBBF24', bg: 'rgba(251,191,36,0.1)', color: '#FBBF24', label: 'PENDING' };
+      case 'REJECTED': case 'DELISTED': case 'SUSPENDED': return { dot: '#F87171', bg: 'rgba(248,113,113,0.1)', color: '#F87171', label: status };
+      default: return { dot: '#60A5FA', bg: 'rgba(96,165,250,0.1)', color: '#60A5FA', label: status };
+    }
+  };
+  const sc = getStyle();
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: sc.color, background: sc.bg }}>
+      <span style={{ width: 4, height: 4, borderRadius: '50%', background: sc.dot, boxShadow: `0 0 5px ${sc.dot}` }} />
+      {sc.label}
+    </span>
+  );
+}
 
-    useEffect(() => {
-        const loadDashboard = async () => {
-            try {
-                const res = await fetchWithAuth('/admin/analytics');
-                setData(res);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadDashboard();
-    }, []);
+export default function AnalyticsPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-    if (loading) return <div className="text-center py-20 opacity-50">Loading analytics engine...</div>;
-    if (!data) return <div className="text-center py-20 text-red-500">Failed to load analytics</div>;
+  useEffect(() => {
+    fetchWithAuth('/admin/analytics').then(setData).catch(console.error).finally(() => setLoading(false));
+  }, []);
 
-    const { summary, distributions, topSuppliers, recentActivity } = data;
-
+  if (loading) {
     return (
-        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-            <div>
-                <h1 className="text-3xl font-bold mb-2">Platform Analytics</h1>
-                <p className="text-muted-foreground">High-level overview of supplier onboarding and product catalog health.</p>
-            </div>
-
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {[
-                    ['Total Users', summary.totalUsers, '👤'],
-                    ['Total Suppliers', summary.totalSuppliers, '🏢'],
-                    ['Active Suppliers', summary.activeSuppliers, '✅'],
-                    ['Total Products', summary.totalProducts, '📦'],
-                    ['Live Products', summary.liveProducts, '🚀'],
-                ].map(([label, value, icon]) => (
-                    <div key={label as string} className="glass p-4 rounded-2xl border border-border flex flex-col items-center text-center">
-                        <span className="text-2xl mb-2">{icon}</span>
-                        <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">{label}</p>
-                        <p className="text-2xl font-black mt-1">{value}</p>
-                    </div>
-                ))}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Supplier Status Distribution */}
-                <div className="glass p-6 rounded-2xl border border-border">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Supplier Funnel</h3>
-                    <div className="space-y-3">
-                        {Object.entries(distributions.supplier).map(([status, count]: [string, any]) => {
-                            const percent = Math.round((count / summary.totalSuppliers) * 100) || 0;
-                            return (
-                                <div key={status} className="flex items-center gap-4">
-                                    <div className="w-24 text-xs font-bold">{status.replace('_', ' ')}</div>
-                                    <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                                        <div className={`h-full ${STATUS_COLORS[status] || 'bg-primary'}`} style={{ width: `${percent}%` }}></div>
-                                    </div>
-                                    <div className="w-12 text-right text-xs text-muted-foreground">{count}</div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Product Status Distribution */}
-                <div className="glass p-6 rounded-2xl border border-border">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Product Catalog Status</h3>
-                    <div className="space-y-3">
-                        {Object.entries(distributions.product).map(([status, count]: [string, any]) => {
-                            const percent = Math.round((count / summary.totalProducts) * 100) || 0;
-                            return (
-                                <div key={status} className="flex items-center gap-4">
-                                    <div className="w-24 text-xs font-bold">{status.replace('_', ' ')}</div>
-                                    <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                                        <div className={`h-full ${STATUS_COLORS[status] || 'bg-primary'}`} style={{ width: `${percent}%` }}></div>
-                                    </div>
-                                    <div className="w-12 text-right text-xs text-muted-foreground">{count}</div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Activity Feed */}
-                <div className="lg:col-span-2 glass p-6 rounded-2xl border border-border">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Recent System Activity</h3>
-                    <div className="space-y-4">
-                        {recentActivity.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic">No recent activity found.</p>
-                        ) : (
-                            recentActivity.map((log: any) => (
-                                <div key={log.id} className="flex gap-4 items-start p-3 rounded-xl bg-secondary/30 border border-border/50">
-                                    <div className="w-2 h-2 mt-1.5 rounded-full bg-primary flex-shrink-0"></div>
-                                    <div>
-                                        <p className="text-sm font-bold">{log.action.replace(/_/g, ' ')}</p>
-                                        <p className="text-xs text-muted-foreground mt-0.5">{log.details || `${log.entityType} ${log.entityId}`}</p>
-                                        <p className="text-[10px] text-muted-foreground/50 mt-1 uppercase font-bold tracking-wider">
-                                            {new Date(log.createdAt).toLocaleString()} • {log.actorEmail || log.actorId}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-
-                {/* Top Suppliers */}
-                <div className="glass p-6 rounded-2xl border border-border">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">Top Contributors</h3>
-                    <div className="space-y-4">
-                        {topSuppliers.map((s: any, idx: number) => (
-                            <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-border/50">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-black">
-                                        #{idx + 1}
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-bold">{s.companyName}</p>
-                                        <p className="text-[10px] text-muted-foreground">{s.status}</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-sm font-black">{s._count.products}</p>
-                                    <p className="text-[10px] text-muted-foreground uppercase">Products</p>
-                                </div>
-                            </div>
-                        ))}
-                        {topSuppliers.length === 0 && <p className="text-xs text-muted-foreground italic">No suppliers found.</p>}
-                    </div>
-                </div>
-            </div>
-        </div>
+      <div style={{ minHeight: '100vh', background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid #3B82F6', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+      </div>
     );
+  }
+
+  const summary = data?.summary || {};
+  const supplierDist = data?.distributions?.supplier || {};
+  const productDist = data?.distributions?.product || {};
+  const topSuppliers = data?.topSuppliers || [];
+
+  const supplierTotal = Object.values(supplierDist).reduce((a: number, b: any) => a + (b as number), 0) as number || 1;
+  const productTotal = Object.values(productDist).reduce((a: number, b: any) => a + (b as number), 0) as number || 1;
+
+  const stats = [
+    { icon: <Users size={22} color="#A78BFA" />, label: 'Total Users', value: summary.totalUsers || 0, bg: 'rgba(167,139,250,0.1)' },
+    { icon: <Building2 size={22} color="#3B82F6" />, label: 'Suppliers', value: summary.totalSuppliers || 0, bg: 'rgba(59,130,246,0.1)' },
+    { icon: <CheckCircle2 size={22} color="#34D399" />, label: 'Active Sellers', value: summary.activeSuppliers || 0, bg: 'rgba(52,211,153,0.1)' },
+    { icon: <Package size={22} color="#FBBF24" />, label: 'Total Products', value: summary.totalProducts || 0, bg: 'rgba(251,191,36,0.1)' },
+    { icon: <Activity size={22} color="#F472B6" />, label: 'Live Products', value: summary.liveProducts || 0, bg: 'rgba(244,114,182,0.1)' },
+  ];
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+        :root { --font-heading:'Newsreader',serif; --font-body:'DM Sans',sans-serif; }
+        *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:var(--font-body); background:#0A0A0A; color:white; -webkit-font-smoothing:antialiased; }
+        ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+      `}</style>
+
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#050505' }}>
+        <Sidebar active="analytics" />
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          {/* HEADER */}
+          <header style={{ position: 'relative', height: 54, background: '#050505', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+             {/* HEADER NAVIGATION */}
+            <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}>
+              <ArrowLeft size={14} /> Back
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)' }}>Last updated Just now</span>
+            </div>
+          </header>
+
+          <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+                <div>
+                  <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 700, color: 'white', letterSpacing: '-0.02em', marginBottom: 4 }}>Platform Analytics</h1>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>High-level overview of supplier onboarding and product catalog health.</p>
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 32 }}>
+                {stats.map((s) => (
+                  <div key={s.label} style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>{s.label}</p>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {s.icon}
+                      </div>
+                    </div>
+                    <p style={{ fontFamily: 'var(--font-num)', fontSize: 32, fontWeight: 700, color: 'white', lineHeight: 1 }}>{s.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, marginBottom: 24 }}>
+
+                {/* Supplier Funnel */}
+                <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 16, marginBottom: 20 }}>
+                    <TrendingUp size={18} color="#3B82F6" />
+                    <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontWeight: 700, color: 'white' }}>Supplier Funnel</h3>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {Object.entries(supplierDist).map(([status, count]) => {
+                      const color = SUPPLIER_STATUS_COLORS[status] || '#A1A1AA';
+                      return (
+                        <div key={status} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', width: 100, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{status.replace(/_/g, ' ')}</span>
+                          <div style={{ flex: 1, height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', background: color, width: `${Math.max(2, ((count as number) / supplierTotal) * 100)}%`, transition: 'width 1s ease-out', boxShadow: `0 0 10px ${color}66` }} />
+                          </div>
+                          <span style={{ fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 700, color: 'white', width: 32, textAlign: 'right' }}>{count as number}</span>
+                        </div>
+                      );
+                    })}
+                    {Object.keys(supplierDist).length === 0 && <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.2)', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>No data available</p>}
+                  </div>
+                </div>
+
+                {/* Product Status */}
+                <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 16, marginBottom: 20 }}>
+                    <PieChart size={18} color="#3B82F6" />
+                    <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontWeight: 700, color: 'white' }}>Product Catalog Status</h3>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {Object.entries(productDist).map(([status, count]) => {
+                      const color = PRODUCT_STATUS_COLORS[status] || '#A1A1AA';
+                      return (
+                        <div key={status} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', width: 120, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{status.replace(/_/g, ' ')}</span>
+                          <div style={{ flex: 1, height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', background: color, width: `${Math.max(2, ((count as number) / productTotal) * 100)}%`, transition: 'width 1s ease-out', boxShadow: `0 0 10px ${color}66` }} />
+                          </div>
+                          <span style={{ fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 700, color: 'white', width: 32, textAlign: 'right' }}>{count as number}</span>
+                        </div>
+                      );
+                    })}
+                    {Object.keys(productDist).length === 0 && <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.2)', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>No data available</p>}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Top Contributors */}
+              <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 16, marginBottom: 20 }}>
+                  <Users size={18} color="#3B82F6" />
+                  <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontWeight: 700, color: 'white' }}>Top Contributors</h3>
+                </div>
+                {topSuppliers.length === 0 ? (
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.2)', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>No supplier data available</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {topSuppliers.map((s: any, i: number) => (
+                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(37,99,235,0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 700 }}>
+                          #{i + 1}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'white', marginBottom: 4 }}>{s.companyName}</p>
+                          <StatusBadge status={s.status} />
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ fontFamily: 'var(--font-num)', fontSize: 20, fontWeight: 700, color: 'white' }}>{s._count?.products || 0}</p>
+                          <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>Products</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }

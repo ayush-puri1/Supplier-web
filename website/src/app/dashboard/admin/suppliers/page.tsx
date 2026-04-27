@@ -1,276 +1,309 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { fetchWithAuth } from "@/lib/api";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { fetchWithAuth } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Building2 , Crown } from 'lucide-react';
+import Sidebar from '@/components/Sidebar';
 
-const STATUS_TABS = ['ALL', 'SUBMITTED', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'CONDITIONAL', 'SUSPENDED', 'DRAFT'] as const;
 
-const STATUS_COLORS: Record<string, string> = {
-    DRAFT: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
-    SUBMITTED: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-    UNDER_REVIEW: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    VERIFIED: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-    CONDITIONAL: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-    REJECTED: 'bg-red-500/10 text-red-500 border-red-500/20',
-    SUSPENDED: 'bg-zinc-800/50 text-zinc-300 border-zinc-600/30',
-};
+
+function SupplierStatusBadge({ status = 'UNKNOWN', size = 'sm' }: { status?: string; size?: 'sm' | 'md' }) {
+  const getStyle = () => {
+    switch (status) {
+      case 'VERIFIED': return { dot: '#34D399', bg: 'rgba(52,211,153,0.1)', color: '#34D399', label: status };
+      case 'SUBMITTED': case 'UNDER_REVIEW': return { dot: '#FBBF24', bg: 'rgba(251,191,36,0.1)', color: '#FBBF24', label: 'PENDING' };
+      case 'REJECTED': case 'SUSPENDED': return { dot: '#F87171', bg: 'rgba(248,113,113,0.1)', color: '#F87171', label: status };
+      case 'CONDITIONAL': return { dot: '#F97316', bg: 'rgba(249,115,22,0.1)', color: '#F97316', label: status };
+      default: return { dot: '#60A5FA', bg: 'rgba(96,165,250,0.1)', color: '#60A5FA', label: status };
+    }
+  };
+  const sc = getStyle();
+  const px = size === 'md' ? '6px 14px' : '4px 10px';
+  const fs = size === 'md' ? 11 : 9;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: px, borderRadius: 999, fontFamily: "'DM Sans', sans-serif", fontSize: fs, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: sc.color, background: sc.bg }}>
+      <span style={{ width: size === 'md' ? 6 : 4, height: size === 'md' ? 6 : 4, borderRadius: '50%', background: sc.dot, boxShadow: `0 0 ${size === 'md' ? 8 : 5}px ${sc.dot}` }} />
+      {sc.label}
+    </span>
+  );
+}
+
+const STATUS_TABS = ['ALL', 'SUBMITTED', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'CONDITIONAL', 'SUSPENDED'] as const;
 
 const TRANSITION_MAP: Record<string, { label: string; status: string; color: string }[]> = {
-    SUBMITTED: [{ label: 'Start Review', status: 'UNDER_REVIEW', color: 'bg-blue-500 hover:bg-blue-600' }],
-    UNDER_REVIEW: [
-        { label: '✅ Verify', status: 'VERIFIED', color: 'bg-emerald-500 hover:bg-emerald-600' },
-        { label: '❌ Reject', status: 'REJECTED', color: 'bg-red-500 hover:bg-red-600' },
-        { label: '⚠️ Conditional', status: 'CONDITIONAL', color: 'bg-orange-500 hover:bg-orange-600' },
-    ],
-    VERIFIED: [{ label: '🚫 Suspend', status: 'SUSPENDED', color: 'bg-zinc-700 hover:bg-zinc-800' }],
-    CONDITIONAL: [
-        { label: '🔄 Re-Review', status: 'UNDER_REVIEW', color: 'bg-blue-500 hover:bg-blue-600' },
-        { label: '❌ Reject', status: 'REJECTED', color: 'bg-red-500 hover:bg-red-600' },
-    ],
-    REJECTED: [{ label: '↩️ Reset to Draft', status: 'DRAFT', color: 'bg-zinc-600 hover:bg-zinc-700' }],
-    SUSPENDED: [{ label: '🔄 Re-Review', status: 'UNDER_REVIEW', color: 'bg-blue-500 hover:bg-blue-600' }],
-    DRAFT: [],
+  SUBMITTED: [{ label: 'Start Review', status: 'UNDER_REVIEW', color: '#3B82F6' }],
+  UNDER_REVIEW: [{ label: '✅ Verify', status: 'VERIFIED', color: '#10B981' }, { label: '❌ Reject', status: 'REJECTED', color: '#EF4444' }, { label: '⚠️ Conditional', status: 'CONDITIONAL', color: '#F59E0B' }],
+  VERIFIED: [{ label: '🚫 Suspend', status: 'SUSPENDED', color: 'rgba(255,255,255,0.2)' }],
+  CONDITIONAL: [{ label: '🔄 Re-Review', status: 'UNDER_REVIEW', color: '#3B82F6' }, { label: '❌ Reject', status: 'REJECTED', color: '#EF4444' }],
+  REJECTED: [{ label: '↩️ Reset to Draft', status: 'DRAFT', color: 'rgba(255,255,255,0.2)' }],
+  SUSPENDED: [{ label: '🔄 Re-Review', status: 'UNDER_REVIEW', color: '#3B82F6' }],
+  DRAFT: [],
 };
 
-export default function AdminSuppliers() {
-    const searchParams = useSearchParams();
-    const initialFilter = searchParams.get('filter') || 'ALL';
+export default function AdminSuppliersPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('ALL');
+  const [selected, setSelected] = useState<any>(null);
+  const [internalNote, setInternalNote] = useState('');
+  
+  const handleChangeRole = async (userId: string, role: string) => {
+    if (!confirm(`Change account role to ${role}?`)) return;
+    setActionLoading(true);
+    try {
+      await fetchWithAuth(`/admin/users/${userId}/role`, { method: 'PATCH', body: JSON.stringify({ role }) });
+      await loadSuppliers();
+      if (selected?.userId === userId) setSelected({ ...selected, user: { ...selected.user, role } });
+    } catch (err: any) { alert(err?.response?.data?.message || 'Failed to change role'); } finally { setActionLoading(false); }
+  };
+  const [actionLoading, setActionLoading] = useState(false);
 
-    const [suppliers, setSuppliers] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState(initialFilter);
-    const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
-    const [internalNote, setInternalNote] = useState("");
-    const [actionLoading, setActionLoading] = useState(false);
+  const loadSuppliers = async () => {
+    try {
+      const url = activeTab === 'ALL' ? '/admin/suppliers' : `/admin/suppliers?status=${activeTab}`;
+      const data = await fetchWithAuth(url);
+      setSuppliers(Array.isArray(data) ? data : []);
+    } catch (err) { console.error(err); } finally { setLoading(false); }
+  };
 
-    const loadSuppliers = async () => {
-        try {
-            const url = activeTab === 'ALL' ? '/admin/suppliers' : `/admin/suppliers?status=${activeTab}`;
-            const data = await fetchWithAuth(url);
-            setSuppliers(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+  useEffect(() => { setLoading(true); loadSuppliers(); }, [activeTab]);
 
-    useEffect(() => { setLoading(true); loadSuppliers(); }, [activeTab]);
+  const handleUpdateStatus = async (id: string, status: string) => {
+    let rejectionReason = '';
+    if (status === 'REJECTED') { rejectionReason = prompt('Rejection reason:') || ''; if (!rejectionReason) return; }
+    setActionLoading(true);
+    try {
+      await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, rejectionReason }) });
+      await loadSuppliers();
+      if (selected?.id === id) { const updated = await fetchWithAuth(`/admin/suppliers/${id}`); setSelected(updated); }
+    } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); } finally { setActionLoading(false); }
+  };
 
-    const handleUpdateStatus = async (id: string, status: string) => {
-        let rejectionReason = "";
-        if (status === 'REJECTED') {
-            rejectionReason = prompt("Please provide a reason for rejection:") || "";
-            if (!rejectionReason) {
-                alert("Rejection reason is required.");
-                return;
-            }
-        }
+  const handleSaveNote = async () => {
+    if (!selected) return;
+    try { await fetchWithAuth(`/admin/suppliers/${selected.id}/notes`, { method: 'PATCH', body: JSON.stringify({ internalNotes: internalNote }) }); } catch { alert('Failed to save note'); }
+  };
 
-        setActionLoading(true);
-        try {
-            await fetchWithAuth(`/admin/suppliers/${id}/status`, {
-                method: 'PATCH',
-                body: JSON.stringify({ status, rejectionReason }),
-            });
-            await loadSuppliers();
-            if (selectedSupplier?.id === id) {
-                const updated = await fetchWithAuth(`/admin/suppliers/${id}`);
-                setSelectedSupplier(updated);
-            }
-        } catch (err: any) {
-            alert(err?.message || 'Failed to update status');
-        } finally {
-            setActionLoading(false);
-        }
-    };
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+        :root { --font-heading:'Newsreader',serif; --font-body:'DM Sans',sans-serif; }
+        *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:var(--font-body); background:#0A0A0A; color:white; -webkit-font-smoothing:antialiased; }
+        ::-webkit-scrollbar{width:4px; height:4px;} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+        
+        .tab-button { padding: 10px 20px; border-radius: 999px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+        .tab-button:hover { background: rgba(255,255,255,0.08); color: white; }
+        .tab-button.active { background: #2563EB; border-color: #3B82F6; color: white; box-shadow: 0 0 16px rgba(37,99,235,0.4); }
+        
+        .list-row { transition: all 0.2s; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
+        .list-row:hover { background: rgba(255,255,255,0.02); }
+        .list-row.selected { background: rgba(37,99,235,0.05); }
+        
+        .action-button { padding: 10px 20px; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; color: white; border: none; cursor: pointer; transition: all 0.2s; }
+        .action-button:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+        .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+      `}</style>
+      
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#050505' }}>
+        <Sidebar active="suppliers" />
 
-    const handleSaveNote = async () => {
-        if (!selectedSupplier) return;
-        try {
-            await fetchWithAuth(`/admin/suppliers/${selectedSupplier.id}/notes`, {
-                method: 'PATCH',
-                body: JSON.stringify({ internalNotes: internalNote }),
-            });
-            await loadSuppliers();
-            setSelectedSupplier((prev: any) => ({ ...prev, internalNotes: internalNote }));
-        } catch (err) {
-            alert('Failed to save note');
-        }
-    };
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          {/* HEADER */}
+          <header style={{ position: 'relative', height: 54, background: '#050505', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+             {/* CENTERED ADMIN TEXT */}
+              
+             <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.3)'}>
+               <ArrowLeft size={14} /> Back
+             </button>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+               <Search size={14} color="rgba(255,255,255,0.3)" />
+               <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)' }}>Supplier Management</span>
+             </div>
+          </header>
 
-    const selectSupplier = (s: any) => {
-        setSelectedSupplier(s);
-        setInternalNote(s.internalNotes || "");
-    };
-
-    return (
-        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-            <div>
-                <h1 className="text-3xl font-bold mb-2">Supplier Verification</h1>
-                <p className="text-muted-foreground">Review registrations, manage compliance, and control platform trust.</p>
-            </div>
-
-            {/* Status Filter Tabs */}
-            <div className="flex flex-wrap gap-2">
-                {STATUS_TABS.map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => { setActiveTab(tab); setSelectedSupplier(null); }}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${activeTab === tab
-                            ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20'
-                            : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-                        }`}
-                    >
-                        {tab.replace('_', ' ')}
-                    </button>
-                ))}
-            </div>
-
-            {loading ? (
-                <div className="text-center py-20 opacity-50">Loading suppliers...</div>
-            ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                    {/* Left: Supplier Table */}
-                    <div className="xl:col-span-2 space-y-4">
-                        {suppliers.length === 0 ? (
-                            <div className="glass rounded-2xl border border-border p-12 text-center text-muted-foreground italic">
-                                No suppliers found with status: {activeTab}
-                            </div>
-                        ) : (
-                            <div className="glass rounded-2xl border border-border overflow-hidden">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="bg-secondary/50 text-xs uppercase tracking-wider font-bold text-muted-foreground">
-                                            <th className="px-6 py-4">Company</th>
-                                            <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4">Trust</th>
-                                            <th className="px-6 py-4">Products</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border/50">
-                                        {suppliers.map((s) => (
-                                            <tr
-                                                key={s.id}
-                                                onClick={() => selectSupplier(s)}
-                                                className={`hover:bg-primary/5 transition-colors cursor-pointer ${selectedSupplier?.id === s.id ? 'bg-primary/10' : ''}`}
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <p className="font-bold text-sm">{s.companyName}</p>
-                                                    <p className="text-xs text-muted-foreground">{s.user?.email}</p>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${STATUS_COLORS[s.status] || ''}`}>
-                                                        {s.status.replace('_', ' ')}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-12 h-1.5 bg-secondary rounded-full overflow-hidden">
-                                                            <div className="h-full bg-primary transition-all" style={{ width: `${s.trustScore || 0}%` }}></div>
-                                                        </div>
-                                                        <span className="text-xs font-bold">{s.trustScore ?? '—'}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-sm font-bold">{s._count?.products || 0}</span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Right: Detail Sidebar */}
-                    <div className="space-y-6">
-                        {selectedSupplier ? (
-                            <div className="glass p-6 rounded-2xl border border-border sticky top-24 animate-in fade-in zoom-in duration-300 space-y-6">
-                                <div>
-                                    <h3 className="text-xl font-bold mb-1">{selectedSupplier.companyName}</h3>
-                                    <p className="text-xs text-muted-foreground">ID: {selectedSupplier.id}</p>
-                                    <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-bold uppercase border ${STATUS_COLORS[selectedSupplier.status] || ''}`}>
-                                        {selectedSupplier.status.replace('_', ' ')}
-                                    </span>
-                                    {selectedSupplier.status === 'REJECTED' && selectedSupplier.rejectionReason && (
-                                        <div className="mt-4 p-4 rounded-xl bg-red-500/5 border border-red-500/10 text-left animate-in fade-in zoom-in duration-300">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Rejection Reason</p>
-                                            <p className="text-sm text-red-700/80 italic">"{selectedSupplier.rejectionReason}"</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Status Actions */}
-                                <section>
-                                    <p className="text-xs font-bold uppercase text-muted-foreground mb-3 tracking-widest">Actions</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(TRANSITION_MAP[selectedSupplier.status] || []).map((t) => (
-                                            <button
-                                                key={t.status}
-                                                disabled={actionLoading}
-                                                onClick={() => handleUpdateStatus(selectedSupplier.id, t.status)}
-                                                className={`px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 ${t.color}`}
-                                            >
-                                                {t.label}
-                                            </button>
-                                        ))}
-                                        {(TRANSITION_MAP[selectedSupplier.status] || []).length === 0 && (
-                                            <p className="text-xs text-muted-foreground italic">No actions available for this status.</p>
-                                        )}
-                                    </div>
-                                </section>
-
-                                {/* Business Details */}
-                                <section className="p-4 rounded-xl bg-secondary/30 border border-border">
-                                    <p className="text-xs font-bold mb-3 uppercase tracking-widest text-muted-foreground">Business Details</p>
-                                    <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-xs">
-                                        {[
-                                            ['GST', selectedSupplier.gstNumber],
-                                            ['PAN', selectedSupplier.panNumber],
-                                            ['City', selectedSupplier.city],
-                                            ['Country', selectedSupplier.country],
-                                            ['Est.', selectedSupplier.yearEstablished],
-                                            ['Workforce', selectedSupplier.workforceSize],
-                                            ['Capacity', `${selectedSupplier.monthlyCapacity}/mo`],
-                                            ['MOQ', selectedSupplier.moq],
-                                            ['Lead Time', `${selectedSupplier.leadTimeDays}d`],
-                                            ['Response', `${selectedSupplier.responseTimeHr}h`],
-                                        ].map(([label, val]) => (
-                                            <div key={label as string}>
-                                                <p className="opacity-50 font-bold uppercase text-[10px]">{label}</p>
-                                                <p className="font-medium text-foreground">{val || 'N/A'}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                {/* Internal Notes */}
-                                <section>
-                                    <p className="text-xs font-bold uppercase text-muted-foreground mb-3 tracking-widest">Internal Notes <span className="text-destructive">(Admin Only)</span></p>
-                                    <textarea
-                                        className="w-full h-28 p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary outline-none transition-all text-sm resize-none"
-                                        placeholder="Add compliance notes, fraud flags, etc..."
-                                        value={internalNote}
-                                        onChange={(e) => setInternalNote(e.target.value)}
-                                    />
-                                    <button
-                                        onClick={handleSaveNote}
-                                        className="mt-2 w-full py-2 rounded-xl bg-primary/10 text-primary border border-primary/20 text-xs font-bold hover:bg-primary hover:text-white transition-all"
-                                    >
-                                        Save Note
-                                    </button>
-                                </section>
-                            </div>
-                        ) : (
-                            <div className="h-80 flex items-center justify-center p-12 text-center glass rounded-2xl border border-dashed border-border text-muted-foreground italic text-sm">
-                                Select a supplier from the table to view details and take action.
-                            </div>
-                        )}
-                    </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+              
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+                <div>
+                  <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 700, color: 'white', letterSpacing: '-0.02em', marginBottom: 4 }}>Supplier Verification</h1>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Review registrations, manage compliance, and control platform trust.</p>
                 </div>
-            )}
+              </div>
+
+              {/* TABS */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
+                {STATUS_TABS.map(tab => (
+                  <button key={tab} className={`tab-button ${activeTab === tab ? 'active' : ''}`} onClick={() => { setActiveTab(tab); setSelected(null); }}>
+                    {tab.replace(/_/g, ' ')}
+                  </button>
+                ))}
+              </div>
+
+              {loading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
+                  <div style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid #3B82F6', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 32 }}>
+                  
+                  {/* MASTER LIST */}
+                  <div>
+                    {suppliers.length === 0 ? (
+                      <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: '60px 20px', textAlign: 'center' }}>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No suppliers found with status: {activeTab}</p>
+                      </div>
+                    ) : (
+                      <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Company</th>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Trust</th>
+                              <th style={{ padding: '16px 20px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Products</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(activeTab === 'ALL' ? suppliers : suppliers.filter(s => s.status === activeTab)).map(s => (
+                              <tr key={s.id} onClick={() => { setSelected(s); setInternalNote(s.internalNotes || ''); }} className={`list-row ${selected?.id === s.id ? 'selected' : ''}`}>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                    <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <Building2 size={16} color="rgba(255,255,255,0.2)" />
+                                    </div>
+                                    <div>
+                                      <Link href={`/dashboard/admin/suppliers/${s.id}`} style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'white', marginBottom: 2, textDecoration: 'none' }}>{s.companyName}</Link>
+                                      <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{s.user?.email}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <SupplierStatusBadge status={s.status} />
+                                </td>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{ width: 60, height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
+                                      <div style={{ height: '100%', background: '#2563EB', width: `${s.trustScore || 0}%` }} />
+                                    </div>
+                                    <span style={{ fontFamily: 'var(--font-num)', fontSize: 13, fontWeight: 700, color: 'white' }}>{s.trustScore ?? '—'}</span>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '16px 20px', fontFamily: 'var(--font-num)', fontSize: 14, fontWeight: 600, color: 'white' }}>{s._count?.products || 0}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* DETAIL VIEW */}
+                  <div>
+                    {selected ? (
+                      <div style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: 24, position: 'sticky', top: 32 }}>
+                        
+                        <div style={{ marginBottom: 24 }}>
+                          <Link href={`/dashboard/admin/suppliers/${selected.id}`} style={{ textDecoration: 'none' }}>
+                            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 700, color: 'white', marginBottom: 6 }}>{selected.companyName}</h3>
+                          </Link>
+                          <p style={{ fontFamily: 'var(--font-num)', fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>ID: {selected.id}</p>
+                          <SupplierStatusBadge status={selected.status} size="md" />
+                          
+                          {selected.status === 'REJECTED' && selected.rejectionReason && (
+                            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                              <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Rejection Reason</p>
+                              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#FCA5A5', fontStyle: 'italic' }}>&ldquo;{selected.rejectionReason}&rdquo;</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.05)', marginBottom: 24 }}>
+                           <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Workflow Actions</p>
+                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                             {(TRANSITION_MAP[selected.status] || []).map(t => (
+                               <button key={t.status} disabled={actionLoading} onClick={() => handleUpdateStatus(selected.id, t.status)} className="action-button" style={{ background: t.color, flex: 1 }}>
+                                 {t.label}
+                               </button>
+                             ))}
+                             {(TRANSITION_MAP[selected.status] || []).length === 0 && (
+                               <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No actions available for this status.</p>
+                             )}
+                           </div>
+                        </div>
+
+                        {user?.role === 'SUPER_ADMIN' && selected.user && (
+                          <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)' }}>
+                            <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Account Role Management</p>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              {['SUPPLIER', 'ADMIN'].map(r => (
+                                <button key={r} disabled={actionLoading} onClick={() => handleChangeRole(selected.userId || selected.user.id, r)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: selected.user.role === r ? '1px solid #3B82F6' : '1px solid rgba(255,255,255,0.1)', background: selected.user.role === r ? 'rgba(59,130,246,0.1)' : 'transparent', color: selected.user.role === r ? '#60A5FA' : 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer' }}>
+                                  {r.replace('_', ' ')}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 24 }}>
+                           <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Business Details</p>
+                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                             {[
+                               ['GST', selected.gstNumber], 
+                               ['PAN', selected.panNumber], 
+                               ['City', selected.city], 
+                               ['Country', selected.country], 
+                               ['Est.', selected.yearEstablished], 
+                               ['Workforce', selected.workforceSize], 
+                               ['Capacity', `${selected.monthlyCapacity}/mo`], 
+                               ['MOQ', selected.moq], 
+                               ['Lead Time', `${selected.leadTimeDays}d`], 
+                               ['Response', `${selected.responseTimeHr}h`]
+                             ].map(([l, v]) => (
+                               <div key={l as string}>
+                                 <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{l}</p>
+                                 <p style={{ fontFamily: 'var(--font-num)', fontSize: 13, fontWeight: 600, color: 'white' }}>{v || 'N/A'}</p>
+                               </div>
+                             ))}
+                           </div>
+                        </div>
+
+                        <div>
+                           <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+                             Internal Notes <span style={{ color: '#EF4444' }}>(Admin Only)</span>
+                           </p>
+                           <textarea 
+                             style={{ width: '100%', height: 120, padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', color: 'white', fontFamily: 'var(--font-body)', fontSize: 13, resize: 'none', outline: 'none' }}
+                             placeholder="Add compliance notes..." 
+                             value={internalNote} 
+                             onChange={(e) => setInternalNote(e.target.value)} 
+                           />
+                           <button onClick={handleSaveNote} style={{ marginTop: 12, width: '100%', padding: '12px', borderRadius: 12, background: 'rgba(37,99,235,0.1)', color: '#3B82F6', border: '1px solid rgba(37,99,235,0.2)', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background='#2563EB'; e.currentTarget.style.color='white' }} onMouseLeave={e => { e.currentTarget.style.background='rgba(37,99,235,0.1)'; e.currentTarget.style.color='#3B82F6' }}>
+                             Save Note
+                           </button>
+                        </div>
+
+                      </div>
+                    ) : (
+                      <div style={{ background: 'rgba(255,255,255,0.01)', borderRadius: 16, border: '2px dashed rgba(255,255,255,0.05)', height: '100%', minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, textAlign: 'center', position: 'sticky', top: 32 }}>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.3)' }}>Select a supplier from the list to view details and take action.</p>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-    );
+      </div>
+    </>
+  );
 }

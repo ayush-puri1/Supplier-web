@@ -1,250 +1,325 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { fetchWithAuth } from "@/lib/api";
-import { Trash2, Plus, UploadCloud, X } from "lucide-react";
+import React, { useState, MouseEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api';
+import AlertBanner from '@/components/ui/AlertBanner';
+import api from '@/lib/api';
+import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  ArrowLeft, UploadCloud, X, Plus, Trash2, Package,
+  LayoutDashboard, User, Bell, Settings, LogOut,
+  Tag, Layers, ImageIcon, Check,
+} from 'lucide-react';
 
-export default function NewProduct() {
-    const router = useRouter();
-    const [categories, setCategories] = useState<string[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [fetchingCategories, setFetchingCategories] = useState(true);
-    const [uploadingImage, setUploadingImage] = useState(false);
-    const [error, setError] = useState("");
+/* ── Sidebar ── */
+function Sidebar() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  const navItems = [
+    { label: 'Dashboard',        icon: <LayoutDashboard size={16} />, href: '/dashboard/supplier',              active: false },
+    { label: 'My Products',      icon: <Package size={16} />,         href: '/dashboard/supplier/products',      active: true  },
+    { label: 'Business Profile', icon: <User size={16} />,            href: '/dashboard/supplier/profile',       active: false },
+    { label: 'Notifications',    icon: <Bell size={16} />,            href: '/dashboard/supplier/notifications', active: false },
+    { label: 'Settings',         icon: <Settings size={16} />,        href: '/dashboard/supplier/settings',      active: false },
+  ];
+  return (
+    <aside style={{ width: 220, flexShrink: 0, background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, padding: '28px 14px 24px' }}>
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 36, paddingLeft: 6 }}>
+        <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.55)', flexShrink: 0 }}>
+          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>D</span>
+        </div>
+        <div>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'white', lineHeight: 1 }}>Delraw</div>
+          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>B2B Portal</div>
+        </div>
+      </Link>
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
+        {navItems.map(item => (
+          <Link key={item.label} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 12px', borderRadius: 9, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: item.active ? 600 : 400, color: item.active ? 'white' : 'rgba(255,255,255,0.38)', background: item.active ? 'rgba(37,99,235,0.14)' : 'transparent', borderLeft: item.active ? '2px solid #60A5FA' : '2px solid transparent', transition: 'all 0.2s' }}>
+            <span style={{ color: item.active ? '#60A5FA' : 'rgba(255,255,255,0.28)', flexShrink: 0 }}>{item.icon}</span>
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
+        {user && (
+          <div style={{ padding: '8px 12px', borderRadius: 9, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 8 }}>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{user?.companyName || user?.email || 'supplier@delraw.com'}</p>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{user?.role?.replace('_', ' ') || 'SUPPLIER'}</p>
+          </div>
+        )}
+        <button onClick={() => { logout?.(); router.push('/login'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(248,113,113,0.65)', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%' }}>
+          <LogOut size={15} /> Sign Out
+        </button>
+      </div>
+    </aside>
+  );
+}
 
-    const [form, setForm] = useState({
-        name: "",
-        category: "",
-        description: "",
-        price: "",
-        moq: "100",
-        leadTime: "7",
-        unit: "units",
-    });
+/* ── Section Card wrapper ── */
+function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div style={{ background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ color: 'rgba(255,255,255,0.3)' }}>{icon}</span>
+        <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em', textTransform: 'uppercase' as const }}>{title}</h3>
+      </div>
+      <div style={{ padding: '20px' }}>{children}</div>
+    </div>
+  );
+}
 
-    const [images, setImages] = useState<string[]>([]);
-    const [variants, setVariants] = useState([{ name: '', sku: '', price: '', stock: '0' }]);
+/* ── Dark field helpers ── */
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontFamily: "'DM Sans', sans-serif", fontSize: 10, fontWeight: 700,
+  letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 8,
+};
+const inputStyle: React.CSSProperties = {
+  width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: 10, color: 'white', fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+  padding: '12px 14px', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s',
+};
 
-    useEffect(() => {
-        const loadCategories = async () => {
-            try {
-                const data = await fetchWithAuth('/products/categories');
-                setCategories(data);
-                if (data.length > 0) setForm(f => ({ ...f, category: data[0] }));
-            } catch (err) {
-                console.error("Failed to load categories", err);
-            } finally {
-                setFetchingCategories(false);
-            }
-        };
-        loadCategories();
-    }, []);
+export default function AddProductPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const CATEGORIES = [
+    'Fabrics',
+    'Trims and Accessories',
+    'Threads and Yarns',
+    'Interlining and Support Materials',
+    'Printing and Embellishments',
+    'Packaging Materials',
+    'Dyes and Chemicals',
+    'Leather and Synthetic Materials',
+    'Technical and Specialty Fabrics',
+  ];
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [unit, setUnit] = useState('units');
+  const [moq, setMoq] = useState('');
+  const [leadTime, setLeadTime] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [variants, setVariants] = useState<Array<{ name: string; sku: string; price: string; stock: string }>>([]);
 
-    const handleVariantChange = (index: number, field: string, value: string) => {
-        const newVariants = [...variants];
-        newVariants[index] = { ...newVariants[index], [field]: value };
-        setVariants(newVariants);
-    };
+  // Categories are static — no fetch needed
 
-    const addVariant = () => setVariants([...variants, { name: '', sku: '', price: '', stock: '0' }]);
-    const removeVariant = (index: number) => setVariants(variants.filter((_, i) => i !== index));
-    const removeImage = (index: number) => setImages(images.filter((_, i) => i !== index));
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res: any = await api.post('/products/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const url = res?.url || res?.data?.url || res;
+      if (typeof url === 'string') setImages([...images, url]);
+    } catch { setError('Failed to upload image'); } finally { setUploadingImage(false); }
+  };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
-        const file = e.target.files[0];
-        setUploadingImage(true);
-        setError("");
+  const removeImage = (i: number) => setImages(images.filter((_, idx) => idx !== i));
+  const addVariant = () => setVariants([...variants, { name: '', sku: '', price: '', stock: '' }]);
+  const updateVariant = (i: number, field: string, val: string) => { const v = [...variants]; (v[i] as any)[field] = val; setVariants(v); };
+  const removeVariant = (i: number) => setVariants(variants.filter((_, idx) => idx !== i));
 
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            const accessToken = localStorage.getItem('access_token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/upload-image`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                body: formData
-            });
-            
-            if (!res.ok) throw new Error("Image upload failed");
-            const data = await res.json();
-            
-            setImages(prev => [...prev, data.url]);
-        } catch (err: any) {
-            setError(err.message || "Failed to upload image");
-        } finally {
-            setUploadingImage(false);
-            if (e.target) e.target.value = '';
-        }
-    };
+  const handleSubmit = async () => {
+    setError('');
+    if (!name.trim()) { setError('Product name is required'); return; }
+    if (!price) { setError('Price is required'); return; }
+    setLoading(true);
+    try {
+      await fetchWithAuth('/products', {
+        method: 'POST',
+        body: JSON.stringify({
+          name, category, description,
+          price: parseFloat(price), unit,
+          moq: parseInt(moq) || 1,
+          leadTime: parseInt(leadTime) || 7,
+          images,
+          variants: variants.filter(v => v.name).map(v => ({ name: v.name, sku: v.sku, price: v.price ? parseFloat(v.price) : undefined, stock: parseInt(v.stock) || 0 })),
+          specs: {},
+        }),
+      });
+      router.push('/dashboard/supplier/products');
+    } catch (err: any) { setError(err?.response?.data?.message || 'Failed to create product'); } finally { setLoading(false); }
+  };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
+  /* Focus ring via JS because we can't do :focus in inline styles */
+  const focusInput = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    e.currentTarget.style.borderColor = '#3B82F6';
+    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+  };
+  const blurInput = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+    e.currentTarget.style.boxShadow = 'none';
+  };
 
-        try {
-            await fetchWithAuth('/products', {
-                method: 'POST',
-                body: JSON.stringify({
-                    ...form,
-                    price: parseFloat(form.price),
-                    moq: parseInt(form.moq),
-                    leadTime: parseInt(form.leadTime),
-                    images,
-                    variants,
-                    specs: {} 
-                }),
-            });
-            router.push('/dashboard/supplier/products');
-        } catch (err: any) {
-            setError(err.message || "Failed to create product");
-        } finally {
-            setLoading(false);
-        }
-    };
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Syne:wght@400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+        :root { --font-heading:'Newsreader',serif; --font-num:'Syne',sans-serif; --font-body:'DM Sans',sans-serif; }
+        *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:var(--font-body); background:#141414; color:white; -webkit-font-smoothing:antialiased; }
+        ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+        select option { background:#1a1a24; color:white; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        .anim-up { animation:fadeUp 0.5s cubic-bezier(.22,1,.36,1) both; }
+        @keyframes spin { to{transform:rotate(360deg)} }
+      `}</style>
 
-    if (fetchingCategories) return <div className="text-center py-20 opacity-50">Preparing workspace...</div>;
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
+        <Sidebar />
 
-    return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-            <div>
-                <button onClick={() => router.back()} className="text-sm font-bold opacity-50 hover:opacity-100 transition-all flex items-center mb-6">
-                    ← Back to Products
-                </button>
-                <h1 className="text-4xl font-black mb-2 flex items-center gap-3">Post New Product ✨</h1>
-                <p className="text-muted-foreground">Add details, images, and variations for your product catalogue.</p>
-            </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          {/* Header */}
+          <header style={{ height: 54, background: '#0A0A0A', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', padding: '0 32px', gap: 16 }}>
+            <Link href="/dashboard/supplier/products" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, textDecoration: 'none', color: 'rgba(255,255,255,0.35)', fontFamily: "'DM Sans', sans-serif", fontSize: 13, transition: 'color 0.2s' }}
+              onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = 'white')}
+              onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = 'rgba(255,255,255,0.35)')}>
+              <ArrowLeft size={14} /> My Products
+            </Link>
+            <span style={{ color: 'rgba(255,255,255,0.1)' }}>/</span>
+            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Add New Product</span>
+          </header>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Images Section */}
-                <div className="glass p-8 rounded-3xl border border-border/50 shadow-xl space-y-6">
-                    <h2 className="text-xl font-bold flex items-center gap-2 border-b border-border pb-2"><UploadCloud className="w-5 h-5 text-primary"/> Product Images</h2>
-                    
-                    <div className="flex flex-wrap gap-4">
-                        {images.map((url, idx) => (
-                            <div key={idx} className="relative w-32 h-32 rounded-xl overflow-hidden border border-border group bg-secondary/20">
-                                <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-contain" />
-                                <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-destructive/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <X size={14} />
-                                </button>
-                            </div>
-                        ))}
+          {/* Content */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px 80px' }}>
+            <div className="anim-up" style={{ maxWidth: 780, margin: '0 auto' }}>
+              <div style={{ marginBottom: 28 }}>
+                <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 26, fontWeight: 700, color: 'white', letterSpacing: '-0.02em', marginBottom: 4 }}>Add New Product</h1>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.28)' }}>Fill in product details. It will go live after admin review.</p>
+              </div>
 
-                        <label className="w-32 h-32 rounded-xl border-2 border-dashed border-primary/40 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 hover:border-primary transition-all group">
-                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
-                            {uploadingImage ? (
-                                <span className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-                            ) : (
-                                <>
-                                    <UploadCloud className="w-8 h-8 text-primary/50 group-hover:text-primary mb-2 transition-colors" />
-                                    <span className="text-xs font-semibold text-primary/70 group-hover:text-primary">Add Image</span>
-                                </>
-                            )}
-                        </label>
-                    </div>
+              {/* Error */}
+              {error && (
+                <div style={{ marginBottom: 20 }}>
+                  <AlertBanner type="error" message={error} onClose={() => setError('')} />
                 </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                {/* Images */}
+                <Section title="Product Images" icon={<ImageIcon size={15} />}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 12 }}>
+                    {images.map((img, i) => (
+                      <div key={i} style={{ position: 'relative', width: 100, height: 100, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
+                        <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: 5, right: 5, width: 22, height: 22, borderRadius: 6, background: 'rgba(0,0,0,0.7)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }}>
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ))}
+                    <label style={{ width: 100, height: 100, borderRadius: 10, border: `2px dashed ${uploadingImage ? 'rgba(37,99,235,0.4)' : 'rgba(255,255,255,0.1)'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: uploadingImage ? 'not-allowed' : 'pointer', gap: 6, transition: 'border-color 0.2s', flexShrink: 0, opacity: uploadingImage ? 0.6 : 1 }}>
+                      {uploadingImage
+                        ? <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.1)', borderTop: '2px solid #3B82F6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                        : <UploadCloud size={20} color="rgba(255,255,255,0.25)" />
+                      }
+                      <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.25)' }}>{uploadingImage ? 'Uploading' : 'Add Image'}</span>
+                      <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} disabled={uploadingImage} />
+                    </label>
+                  </div>
+                </Section>
 
                 {/* Core Details */}
-                <div className="glass p-8 rounded-3xl border border-border/50 shadow-xl space-y-6">
-                    <h2 className="text-xl font-bold border-b border-border pb-2">Core Details</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Product Name</label>
-                            <input required name="name" value={form.name} onChange={handleChange} placeholder="e.g. Premium Cotton Yarn" className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Category</label>
-                            <select name="category" value={form.category} onChange={handleChange} className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all appearance-none cursor-pointer">
-                                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
-                        </div>
+                <Section title="Core Details" icon={<Tag size={15} />}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                    <div>
+                      <label style={labelStyle}>Product Name *</label>
+                      <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Premium Cotton Tee" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
                     </div>
-                    
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Description</label>
-                        <textarea required name="description" value={form.description} onChange={handleChange} rows={4} placeholder="Describe your product's quality, material, and uniqueness..." className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all resize-none" />
+                    <div>
+                      <label style={labelStyle}>Category</label>
+                      <select value={category} onChange={e => setCategory(e.target.value)} style={{ ...inputStyle, appearance: 'none' as const }} onFocus={focusInput} onBlur={blurInput}>
+                        <option value="">Select category</option>
+                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Base Price (₹)</label>
-                            <input required name="price" type="number" value={form.price} onChange={handleChange} placeholder="0.00" className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Unit</label>
-                            <input required name="unit" value={form.unit} onChange={handleChange} placeholder="units/kg/meters" className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Min Order (MOQ)</label>
-                            <input required name="moq" type="number" value={form.moq} onChange={handleChange} className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Lead Time (Days)</label>
-                            <input required name="leadTime" type="number" value={form.leadTime} onChange={handleChange} className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none transition-all" />
-                        </div>
-                    </div>
-                </div>
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={labelStyle}>Description</label>
+                    <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Describe your product — materials, use case, key features..." style={{ ...inputStyle, resize: 'vertical' as const, lineHeight: 1.6 }} onFocus={focusInput} onBlur={blurInput} />
+                  </div>
 
-                {/* Variations */}
-                <div className="glass p-8 rounded-3xl border border-border/50 shadow-xl space-y-6">
-                    <div className="flex items-center justify-between border-b border-border pb-2">
-                        <h2 className="text-xl font-bold flex items-center gap-2">Variations <span className="text-xs font-normal opacity-50 bg-secondary px-2 py-1 rounded-full">Optional</span></h2>
-                        <button type="button" onClick={addVariant} className="text-sm text-primary font-bold flex items-center gap-1 hover:brightness-110 transition-all">
-                            <Plus size={16} /> Add Variant
-                        </button>
-                    </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                    {[
+                      { label: 'Price ₹ *', value: price, onChange: setPrice, placeholder: '100', type: 'number' },
+                      { label: 'Unit',       value: unit,  onChange: setUnit,  placeholder: 'units', type: 'text'   },
+                      { label: 'MOQ',        value: moq,   onChange: setMoq,   placeholder: '10',    type: 'number' },
+                      { label: 'Lead Time (days)', value: leadTime, onChange: setLeadTime, placeholder: '7', type: 'number' },
+                    ].map(f => (
+                      <div key={f.label}>
+                        <label style={labelStyle}>{f.label}</label>
+                        <input type={f.type} value={f.value} onChange={e => f.onChange(e.target.value)} placeholder={f.placeholder} style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+                      </div>
+                    ))}
+                  </div>
+                </Section>
 
-                    {variants.length === 0 ? (
-                        <p className="text-center py-4 text-muted-foreground italic text-sm">No variations added. The product defaults to a single item.</p>
-                    ) : (
-                        <div className="space-y-4">
-                            {variants.map((variant, index) => (
-                                <div key={index} className="flex flex-wrap md:flex-nowrap items-center gap-4 p-4 rounded-2xl bg-secondary/20 border border-border/50 hover:border-primary/30 transition-all group">
-                                    <div className="flex-1 space-y-1">
-                                        <label className="text-[10px] uppercase font-bold opacity-60 ml-1">Variant Name</label>
-                                        <input placeholder="e.g. Size M, Red" required value={variant.name} onChange={(e) => handleVariantChange(index, 'name', e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:border-primary outline-none" />
-                                    </div>
-                                    <div className="w-full md:w-32 space-y-1">
-                                        <label className="text-[10px] uppercase font-bold opacity-60 ml-1">SKU</label>
-                                        <input placeholder="Optional" value={variant.sku} onChange={(e) => handleVariantChange(index, 'sku', e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:border-primary outline-none" />
-                                    </div>
-                                    <div className="w-full md:w-32 space-y-1">
-                                        <label className="text-[10px] uppercase font-bold opacity-60 ml-1">Price Override (₹)</label>
-                                        <input type="number" placeholder="Optional" value={variant.price} onChange={(e) => handleVariantChange(index, 'price', e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:border-primary outline-none" />
-                                    </div>
-                                    <div className="w-full md:w-24 space-y-1">
-                                        <label className="text-[10px] uppercase font-bold opacity-60 ml-1">Stock</label>
-                                        <input type="number" required value={variant.stock} onChange={(e) => handleVariantChange(index, 'stock', e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:border-primary outline-none" />
-                                    </div>
-                                    <button type="button" onClick={() => removeVariant(index)} className="mt-5 p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors" title="Remove Variation">
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {error && <p className="text-destructive font-bold text-center bg-destructive/10 p-3 rounded-lg border border-destructive/20 animate-in zoom-in">{error}</p>}
-
-                <div className="flex gap-4 pt-4">
-                    <button type="button" onClick={() => router.back()} className="flex-1 py-4 rounded-xl bg-secondary font-bold hover:bg-secondary/80 transition-all border border-border">
-                        Cancel Let Me Re-Think
+                {/* Variants */}
+                <Section title="Variations" icon={<Layers size={15} />}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>
+                      {variants.length === 0 ? 'Optional — defaults to single-item product.' : `${variants.length} variant${variants.length !== 1 ? 's' : ''} added`}
+                    </p>
+                    <button onClick={addVariant} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(37,99,235,0.3)', background: 'rgba(37,99,235,0.08)', color: '#60A5FA', fontFamily: "'Syne', sans-serif", fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      <Plus size={12} /> Add Variant
                     </button>
-                    <button disabled={loading} type="submit" className="flex-[2] py-4 rounded-xl premium-gradient text-white font-black shadow-xl hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50">
-                        {loading ? "Publishing Catalog..." : "Submit Product Request"}
-                    </button>
+                  </div>
+                  {variants.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {variants.map((v, i) => (
+                        <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr auto', gap: 10, padding: '14px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', alignItems: 'end' }}>
+                          {[
+                            { label: 'Variant Name', field: 'name', value: v.name, placeholder: 'Size M' },
+                            { label: 'SKU',           field: 'sku',  value: v.sku,  placeholder: 'SKU-001' },
+                            { label: 'Price ₹',       field: 'price',value: v.price,placeholder: '—'       },
+                            { label: 'Stock',         field: 'stock',value: v.stock,placeholder: '100'     },
+                          ].map(f => (
+                            <div key={f.field}>
+                              <label style={{ ...labelStyle, marginBottom: 6 }}>{f.label}</label>
+                              <input type={f.field === 'name' || f.field === 'sku' ? 'text' : 'number'} value={f.value} onChange={e => updateVariant(i, f.field, e.target.value)} placeholder={f.placeholder}
+                                style={{ ...inputStyle, padding: '10px 12px', fontSize: 13 }} onFocus={focusInput} onBlur={blurInput} />
+                            </div>
+                          ))}
+                          <button onClick={() => removeVariant(i)} style={{ padding: '10px', borderRadius: 8, border: '1px solid rgba(248,113,113,0.15)', background: 'rgba(248,113,113,0.06)', color: '#F87171', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Section>
+
+                {/* Submit */}
+                <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
+                  <button onClick={() => router.push('/dashboard/supplier/products')} style={{ flex: 1, padding: '13px', borderRadius: 11, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                    onMouseEnter={(e: MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
+                    onMouseLeave={(e: MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
+                  >
+                    Cancel
+                  </button>
+                  <button onClick={handleSubmit} disabled={loading} style={{ flex: 2, padding: '13px', borderRadius: 11, border: 'none', background: loading ? 'rgba(37,99,235,0.5)' : '#2563EB', color: 'white', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', boxShadow: loading ? 'none' : '0 0 28px rgba(37,99,235,0.4)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    {loading
+                      ? <><div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Submitting…</>
+                      : <><Check size={14} /> Submit for Review</>
+                    }
+                  </button>
                 </div>
-            </form>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      </div>
+    </>
+  );
 }

@@ -1,66 +1,211 @@
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-    --radius: 0.75rem;
-  }
+/* ══════════════════════════════════════════════
+   DELRAW UNIFIED DESIGN SYSTEM (THE LEDGER VIBE)
+   ══════════════════════════════════════════════ */
+
+:root {
+  /* Typography Tokens */
+  --font-display: 'Newsreader', serif;
+  --font-heading: 'Newsreader', serif;
+  --font-num: 'Syne', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* Primary Palette */
+  --primary: #3B82F6;
+  /* Defined in image 2 */
+  --blue-600: #2563EB;
+  --blue-500: #3B82F6;
+  --blue-400: #60A5FA;
+
+  /* Secondary Palette */
+  --secondary: #1E293B;
+  /* Defined in image 2 */
+  --slate-800: #1E293B;
+  --slate-700: #334155;
+
+  /* Neutral Surface Tokens */
+  --neutral-bg: #0A0A0A;
+  --bg-page: #0A0A0A;
+  --bg-surface: #121212;
+  --bg-sidebar: #050505;
+  --bg-input: rgba(255, 255, 255, 0.04);
+
+  /* Text Tokens */
+  --text-primary: #F1F5F9;
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --text-dim: rgba(255, 255, 255, 0.28);
+
+  /* Border Tokens */
+  --border: rgba(255, 255, 255, 0.05);
+  --border-input: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
 }
 
-@theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-primary: hsl(var(--primary));
-  --color-secondary: hsl(var(--secondary));
-  --color-muted: hsl(var(--muted));
-  --color-accent: hsl(var(--accent));
-  --color-destructive: hsl(var(--destructive));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+/* ══════════════════════════════════════════════
+   SHARED ADMIN UTILITIES
+   ══════════════════════════════════════════════ */
 
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+.search-input { 
+  background: var(--bg-input); 
+  border: 1px solid var(--border-input); 
+  border-radius: 8px; 
+  color: white; 
+  font-family: var(--font-body); 
+  font-size: 13px; 
+  padding: 7px 12px 7px 34px; 
+  outline: none; 
+  width: 200px; 
+  transition: all 0.2s; 
+}
+.search-input::placeholder { color: var(--text-dim); }
+.search-input:focus { border-color: rgba(255,255,255, 0.14); width: 240px; }
+
+.admin-table-row { transition: background 0.2s; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.admin-table-row:hover { background: rgba(255,255,255,0.02); }
+
+.action-btn { 
+  background: rgba(255,255,255,0.04); 
+  border: 1px solid rgba(255,255,255,0.08); 
+  color: rgba(255,255,255,0.7); 
+  cursor: pointer; 
+  padding: 6px 12px; 
+  border-radius: 8px; 
+  font-family: var(--font-heading); 
+  font-size: 11px; 
+  font-weight: 700; 
+  transition: all 0.2s; 
+}
+.action-btn:hover { background: rgba(255,255,255,0.08); color: white; }
+.action-btn.approve { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.25); color: #34D399; }
+.action-btn.approve:hover { background: rgba(52,211,153,0.2); }
+.action-btn.reject { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.25); color: #F87171; }
+.action-btn.reject:hover { background: rgba(248,113,113,0.2); }
+
+
+/* Base Resets & Typography mapping */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-family: var(--font-body), sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-.glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Headings use Newsreader per design rules */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading), serif;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
 }
 
-.premium-gradient {
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, #4f46e5 100%);
+/* Specific component primitives */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: var(--primary);
+  color: white;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(.22, 1, .36, 1);
 }
 
-.text-gradient {
-  background: linear-gradient(to right, #60a5fa, #a855f7);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+.btn-primary:hover:not(:disabled) {
+  background: #2563EB;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--secondary);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.input-unified {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-input);
+  background: var(--bg-input);
+  color: white;
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.input-unified:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+/* Animations */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.5s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
