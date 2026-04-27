@@ -5,23 +5,33 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { PrismaService } from '../prisma/prisma.service';
-import { AwsService } from '../aws/aws.service';
+import { StorageService } from '../storage/storage.service';
 
 /**
  * Service to handle product lifecycle management for suppliers.
- * Includes category retrieval, image uploads via S3, and product CRUD.
- * Enforces platform-level limits such as max products per supplier.
+ * - Product metadata (name, price, specs, status) lives in PostgreSQL via Prisma.
+ * - Product image records live in MongoDB (ProductImage collection).
+ * - Product image binaries live in MongoDB GridFS (bucket: 'products').
+ * - Enforces platform-level limits such as max products per supplier.
  */
 @Injectable()
 export class ProductsService {
   /**
    * @param {PrismaService} prisma
-   * @param {AwsService} awsService
+   * @param {StorageService} storageService
+   * @param {Model} productImageModel - Mongoose model for product_images collection
    */
-  constructor(@Inject(PrismaService) prisma, @Inject(AwsService) awsService) {
+  constructor(
+    @Inject(PrismaService) prisma,
+    @Inject(StorageService) storageService,
+    @InjectModel('ProductImage') productImageModel,
+  ) {
     this.prisma = prisma;
-    this.awsService = awsService;
+    this.storageService = storageService;
+    this.productImageModel = productImageModel;
   }
 
   /**
@@ -50,13 +60,14 @@ export class ProductsService {
   }
 
   /**
-   * Uploads a temporary product image to S3.
-   * @param {Object} file - The Multer file object.
-   * @returns {Promise<{ url: string }>} The public URL of the uploaded image.
+   * Uploads a temporary product image to GridFS.
+   * Used for staging images before a product is saved.
+   * @param {Object} file - The Multer file object (memoryStorage).
+   * @returns {Promise<{ url: string }>} The backend-served URL of the uploaded image.
    */
   async uploadImage(file) {
     if (!file) throw new BadRequestException('No file provided');
-    const { url } = await this.awsService.uploadFile(file, 'products');
+    const { url } = await this.storageService.uploadFile(file, 'products');
     return { url };
   }
 
@@ -114,12 +125,13 @@ export class ProductsService {
             : [],
         },
       },
-      include: { variants: true, images: true },
+      include: { variants: true },
     });
   }
 
   /**
    * Lists all products belonging to the calling supplier with pagination.
+   * Images are fetched from MongoDB and merged into the response.
    */
   async findAll(userId, skip = 0, take = 20) {
     const supplier = await this.prisma.supplier.findUnique({
@@ -127,11 +139,11 @@ export class ProductsService {
     });
     if (!supplier) return { items: [], total: 0, skip, take };
 
-    const [items, total] = await Promise.all([
+    const [products, total] = await Promise.all([
       this.prisma.product.findMany({
         where: { supplierId: supplier.id },
         orderBy: { createdAt: 'desc' },
-        include: { variants: true, images: { orderBy: { order: 'asc' } } },
+        include: { variants: true },
         skip,
         take,
       }),
@@ -140,17 +152,36 @@ export class ProductsService {
       }),
     ]);
 
+    // Attach MongoDB images to each product
+    const items = await Promise.all(
+      products.map(async (product) => {
+        const images = await this.productImageModel
+          .find({ productId: product.id })
+          .sort({ order: 1 })
+          .lean();
+        return { ...product, images };
+      }),
+    );
+
     return { items, total, skip, take };
   }
 
   /**
-   * Retrieves a single product by its unique ID.
+   * Retrieves a single product by its unique ID, with MongoDB images.
    */
   async findOne(id) {
-    return this.prisma.product.findUnique({
+    const product = await this.prisma.product.findUnique({
       where: { id },
-      include: { variants: true, images: { orderBy: { order: 'asc' } } },
+      include: { variants: true },
     });
+    if (!product) return null;
+
+    const images = await this.productImageModel
+      .find({ productId: id })
+      .sort({ order: 1 })
+      .lean();
+
+    return { ...product, images };
   }
 
   /**
@@ -188,6 +219,7 @@ export class ProductsService {
 
   /**
    * Deletes a product if it is not currently 'LIVE'.
+   * Also removes all associated images from MongoDB and GridFS.
    * Live products must be delisted rather than deleted for data integrity.
    */
   async remove(userId, id) {
@@ -203,6 +235,13 @@ export class ProductsService {
     if (product.status === 'LIVE')
       throw new ForbiddenException('Cannot delete a live product');
 
+    // Remove all images from GridFS + MongoDB
+    const images = await this.productImageModel.find({ productId: id }).lean();
+    await Promise.all(
+      images.map((img) => this.storageService.deleteFile(img.key, 'products')),
+    );
+    await this.productImageModel.deleteMany({ productId: id });
+
     return this.prisma.product.delete({ where: { id } });
   }
 
@@ -217,7 +256,8 @@ export class ProductsService {
   }
 
   /**
-   * Adds an image to a product's gallery via S3.
+   * Adds an image to a product's gallery via GridFS.
+   * Stores image metadata in MongoDB (product_images collection).
    */
   async addProductImage(productId, file, order, alt, userId) {
     const supplier = await this.prisma.supplier.findUnique({
@@ -231,18 +271,25 @@ export class ProductsService {
     if (!product)
       throw new ForbiddenException('Product not found or not yours');
 
-    const { url, key } = await this.awsService.uploadFile(
+    const { url, key } = await this.storageService.uploadFile(
       file,
-      `products/${productId}`,
+      'products',
     );
 
-    return this.prisma.productImage.create({
-      data: { productId, url, key, order, alt },
+    const image = await this.productImageModel.create({
+      productId,
+      url,
+      key,
+      order: order || 0,
+      alt: alt || null,
     });
+
+    return image;
   }
 
   /**
-   * Removes an image from a product's gallery and deletes the physical file from S3.
+   * Removes an image from a product's gallery.
+   * Deletes both the MongoDB metadata record and the GridFS binary.
    */
   async removeProductImage(productId, imageId, userId) {
     const supplier = await this.prisma.supplier.findUnique({
@@ -256,15 +303,15 @@ export class ProductsService {
     if (!product)
       throw new ForbiddenException('Product not found or not yours');
 
-    const image = await this.prisma.productImage.findUnique({
-      where: { id: imageId },
-    });
+    const image = await this.productImageModel.findById(imageId).lean();
     if (!image || image.productId !== productId)
       throw new NotFoundException('Image not found');
 
-    await this.awsService.deleteFile(image.key);
+    // Delete binary from GridFS
+    await this.storageService.deleteFile(image.key, 'products');
+    // Delete metadata from MongoDB
+    await this.productImageModel.findByIdAndDelete(imageId);
 
-    await this.prisma.productImage.delete({ where: { id: imageId } });
     return { message: 'Image deleted' };
   }
 }

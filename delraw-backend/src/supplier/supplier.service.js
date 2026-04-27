@@ -194,10 +194,18 @@ export class SupplierService {
       where: { id: 'singleton' },
     });
 
+    const recentOrders = await this.prisma.order.findMany({
+      where: { supplierId: supplier.id },
+      include: { product: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    });
+
     return {
       productStats,
       salesStats,
       notifications,
+      recentOrders,
       commission: config?.businessCommission || 10,
     };
   }

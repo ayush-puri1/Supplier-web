@@ -1,6 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
 
+/**
+ * Mongoose schema for platform-wide audit logs.
+ * Stored in MongoDB collection: audit_logs
+ *
+ * actorEmail and actorRole are NOT required so that edge-case log calls
+ * (e.g., logout where email may not be available) do not throw silently.
+ */
 @Schema({ timestamps: true, collection: 'audit_logs' })
 export class AuditLog {
   @Prop({ type: String, required: true, index: true })
@@ -9,10 +15,10 @@ export class AuditLog {
   @Prop({ type: String, required: true, index: true })
   actorId;
 
-  @Prop({ type: String, required: true, index: true })
+  @Prop({ type: String, index: true })
   actorEmail;
 
-  @Prop({ type: String, required: true, index: true })
+  @Prop({ type: String, index: true })
   actorRole;
 
   @Prop({ type: String, required: true, index: true })
@@ -39,5 +45,10 @@ export class AuditLog {
 
 export const AuditLogSchema = SchemaFactory.createForClass(AuditLog);
 
-// Add text index for searching email and action
-AuditLogSchema.index({ actorEmail: 'text', action: 'text', logId: 'text', details: 'text' });
+// Compound text index for full-text search across key fields
+AuditLogSchema.index({
+  actorEmail: 'text',
+  action: 'text',
+  logId: 'text',
+  details: 'text',
+});

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { fetchWithAuth } from '@/lib/api';
+import { fetchWithAuth, getMediaUrl } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Crown } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
@@ -158,7 +158,7 @@ export default function AdminProductsPage() {
                                 <td style={{ padding: '16px 20px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                     {p.images?.[0] ? (
-                                      <img src={p.images[0]} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                      <img src={getMediaUrl(p.images[0])} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
                                     ) : (
                                       <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <Package size={20} color="rgba(255,255,255,0.2)" />
@@ -194,7 +194,7 @@ export default function AdminProductsPage() {
                         {selected.images?.length > 0 && (
                           <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, marginBottom: 20 }}>
                             {selected.images.map((img: string, i: number) => (
-                              <img key={i} src={img} alt="" style={{ height: 100, minWidth: 100, borderRadius: 12, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                              <img key={i} src={getMediaUrl(img)} alt="" style={{ height: 100, minWidth: 100, borderRadius: 12, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }} />
                             ))}
                           </div>
                         )}

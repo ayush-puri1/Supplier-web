@@ -239,7 +239,7 @@ export default function LandingPage() {
                 </div>
                 <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
                   <div style={{ padding: '4px 24px', borderRadius: 6, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)', fontSize: 10, color: 'rgba(255,255,255,0.18)', fontFamily: 'var(--font-body)' }}>
-                    app.delraw.com/dashboard
+                    delraw.in/dashboard
                   </div>
                 </div>
               </div>

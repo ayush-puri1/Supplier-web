@@ -405,4 +405,18 @@ export class AdminController {
   async removeAdmin(id, req) {
     return this.adminService.removeAdmin(id, req.user.userId, req.user.email);
   }
+
+  /**
+   * ADMIN: Retrieves a paginated list of system audit logs.
+   */
+  @Get('audit-logs')
+  @ApiOperation({ summary: 'Get system audit logs' })
+  @Bind(Query('page'), Query('search'), Query('take'))
+  async getAuditLogs(page, search, take) {
+    return this.adminService.getAuditLogs(
+      parseInt(page) || 1,
+      search || '',
+      parseInt(take) || 20,
+    );
+  }
 }

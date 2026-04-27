@@ -19,7 +19,7 @@ export default function OnboardingForm({ profile, onComplete }: { profile?: any;
         city: profile?.city || '',
         state: profile?.state || '',
         pincode: profile?.pincode || '',
-        // Step 3 (files - mocked as strings for now, normally would be uploaded URLs)
+        // Step 3 (files)
         gstDoc: null as File | null,
         panDoc: null as File | null,
         businessDoc: null as File | null,
@@ -60,7 +60,26 @@ export default function OnboardingForm({ profile, onComplete }: { profile?: any;
                     city: formData.city,
                 }),
             });
-            // Then submit for review (Mocking doc upload for now)
+
+            // Upload documents if provided
+            const uploadDoc = async (file: File | null, type: string) => {
+                if (!file) return;
+                const fd = new FormData();
+                fd.append('file', file);
+                fd.append('type', type);
+                await fetchWithAuth('/documents/upload', {
+                    method: 'POST',
+                    body: fd,
+                });
+            };
+
+            await Promise.all([
+                uploadDoc(formData.gstDoc, 'GST'),
+                uploadDoc(formData.panDoc, 'PAN'),
+                uploadDoc(formData.businessDoc, 'BUSINESS_REGISTRATION')
+            ]);
+
+            // Then submit for review
             await fetchWithAuth('/supplier/submit', {
                 method: 'POST',
             });

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { fetchWithAuth } from '@/lib/api';
+import { fetchWithAuth, getMediaUrl } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, CheckCircle, XCircle, FileText, Download, Shield, Building2, MapPin, Globe, LayoutDashboard, Users, Package, LogOut, CheckCircle2 , Crown } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
@@ -193,7 +193,7 @@ export default function SupplierDetailPage() {
                               <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{doc.fileName || 'document_file.pdf'}</p>
                             </div>
                           </div>
-                          <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, background: 'rgba(37,99,235,0.1)', color: '#3B82F6', transition: 'all 0.2s' }}>
+                          <a href={getMediaUrl(doc.url)} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, background: 'rgba(37,99,235,0.1)', color: '#3B82F6', transition: 'all 0.2s' }}>
                             <Download size={14} />
                           </a>
                         </div>
