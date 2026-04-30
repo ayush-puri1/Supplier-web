@@ -53,7 +53,6 @@ export default function Sidebar({ active }: SidebarProps) {
         { name: 'Audit Logs', href: '/dashboard/admin/audit-logs', icon: History, key: 'audit' },
         { name: 'System Config', href: '/dashboard/super-admin/config', icon: Settings, key: 'config' },
         { name: 'Admin Mgmt', icon: Crown, href: '/dashboard/super-admin/admin-management', key: 'admin_mgmt' },
-        { name: 'Admin Portal', icon: Shield, href: '/dashboard/admin', key: 'admin_link' },
     ];
 
     const getLinks = () => {

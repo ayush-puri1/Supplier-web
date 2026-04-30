@@ -15,18 +15,25 @@ import {
 import Sidebar from '@/components/Sidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 import StatusBadge from '@/components/StatusBadge';
+import ActionModal from '@/components/ActionModal';
 
 /* ══════════════════════════════════════════════
    MAIN ADMIN PAGE
    ══════════════════════════════════════════════ */
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState<any>(null);
   const [pendingSuppliers, setPendingSuppliers] = useState<any[]>([]);
   const [pendingProducts, setPendingProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rejectModal, setRejectModal] = useState<{ isOpen: boolean, type: 'supplier' | 'product' | null, id: string | null }>({ isOpen: false, type: null, id: null });
 
   useEffect(() => {
+    if (user?.role === 'SUPER_ADMIN') {
+      router.replace('/dashboard/super-admin');
+      return;
+    }
     const loadData = async () => {
       try {
         const [s, sup, prod] = await Promise.all([
@@ -43,27 +50,44 @@ export default function AdminDashboard() {
   }, []);
 
   const handleSupplierAction = async (id: string, status: string) => {
-    let rejectionReason = '';
     if (status === 'REJECTED') {
-      rejectionReason = prompt('Provide a rejection reason:') || '';
-      if (!rejectionReason) return;
+      setRejectModal({ isOpen: true, type: 'supplier', id });
+      return;
     }
     try {
-      await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, rejectionReason }) });
+      await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
       setPendingSuppliers(pendingSuppliers.filter(s => s.id !== id));
     } catch (err: any) { alert(err?.response?.data?.message || 'Action failed'); }
   };
 
   const handleProductAction = async (id: string, status: string) => {
-    let rejectionReason = '';
     if (status === 'REJECTED') {
-      rejectionReason = prompt('Provide a rejection reason:') || '';
-      if (!rejectionReason) return;
+      setRejectModal({ isOpen: true, type: 'product', id });
+      return;
     }
     try {
-      await fetchWithAuth(`/admin/products/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, rejectionReason }) });
+      await fetchWithAuth(`/admin/products/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
       setPendingProducts(pendingProducts.filter(p => p.id !== id));
     } catch (err: any) { alert(err?.response?.data?.message || 'Action failed'); }
+  };
+
+  const confirmReject = async (reason: string) => {
+    if (!reason || !rejectModal.id || !rejectModal.type) return;
+    const { id, type } = rejectModal;
+    
+    try {
+      if (type === 'supplier') {
+        await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'REJECTED', rejectionReason: reason }) });
+        setPendingSuppliers(pendingSuppliers.filter(s => s.id !== id));
+      } else if (type === 'product') {
+        await fetchWithAuth(`/admin/products/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'REJECTED', rejectionReason: reason }) });
+        setPendingProducts(pendingProducts.filter(p => p.id !== id));
+      }
+    } catch (err: any) { 
+      alert(err?.response?.data?.message || 'Action failed'); 
+    } finally {
+      setRejectModal({ isOpen: false, type: null, id: null });
+    }
   };
 
   if (loading) {
@@ -207,6 +231,32 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      <ActionModal
+        isOpen={rejectModal.isOpen && rejectModal.type === 'supplier'}
+        title="Reject Supplier"
+        message="Please provide a reason for rejecting this supplier application."
+        type="prompt"
+        danger={true}
+        promptLabel="Rejection Reason"
+        promptPlaceholder="E.g., Incomplete documentation"
+        confirmText="Reject Supplier"
+        onConfirm={(val) => confirmReject(val || '')}
+        onCancel={() => setRejectModal({ isOpen: false, type: null, id: null })}
+      />
+
+      <ActionModal
+        isOpen={rejectModal.isOpen && rejectModal.type === 'product'}
+        title="Reject Product"
+        message="Please provide a reason for rejecting this product."
+        type="prompt"
+        danger={true}
+        promptLabel="Rejection Reason"
+        promptPlaceholder="E.g., Inappropriate content, poor quality image"
+        confirmText="Reject Product"
+        onConfirm={(val) => confirmReject(val || '')}
+        onCancel={() => setRejectModal({ isOpen: false, type: null, id: null })}
+      />
     </div>
     );
 }

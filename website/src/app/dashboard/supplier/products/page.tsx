@@ -10,6 +10,7 @@ import {
   User, Bell, Settings, LogOut, Search, Clock, Truck,
   CheckCircle2, AlertCircle, XCircle,
 } from 'lucide-react';
+import ActionModal from '@/components/ActionModal';
 
 /* ── Sidebar (shared pattern) ── */
 function Sidebar() {
@@ -78,6 +79,7 @@ export default function SupplierProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [modal, setModal] = useState<{isOpen: boolean, productId: string | null}>({ isOpen: false, productId: null });
 
   const loadProducts = async () => {
     try {
@@ -88,10 +90,18 @@ export default function SupplierProductsPage() {
 
   useEffect(() => { loadProducts(); }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this product?')) return;
-    try { await fetchWithAuth(`/products/${id}`, { method: 'DELETE' }); loadProducts(); }
+  const handleDeleteClick = (id: string) => {
+    setModal({ isOpen: true, productId: id });
+  };
+
+  const confirmDelete = async () => {
+    if (!modal.productId) return;
+    try { 
+      await fetchWithAuth(`/products/${modal.productId}`, { method: 'DELETE' }); 
+      loadProducts(); 
+    }
     catch (err: any) { alert(err?.response?.data?.message || 'Failed to delete'); }
+    finally { setModal({ isOpen: false, productId: null }); }
   };
 
   const filtered = products.filter(p =>
@@ -224,7 +234,7 @@ export default function SupplierProductsPage() {
                         <Edit2 size={13} /> Edit
                       </Link>
                       {p.status !== 'LIVE' && (
-                        <button onClick={() => handleDelete(p.id)} className="prod-action-btn danger" style={{ borderLeft: '1px solid rgba(255,255,255,0.05)' }}>
+                        <button onClick={() => handleDeleteClick(p.id)} className="prod-action-btn danger" style={{ borderLeft: '1px solid rgba(255,255,255,0.05)' }}>
                           <Trash2 size={13} /> Delete
                         </button>
                       )}
@@ -236,6 +246,17 @@ export default function SupplierProductsPage() {
           </div>
         </div>
       </div>
+
+      <ActionModal
+        isOpen={modal.isOpen}
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        type="confirm"
+        danger={true}
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setModal({ isOpen: false, productId: null })}
+      />
     </>
   );
 }

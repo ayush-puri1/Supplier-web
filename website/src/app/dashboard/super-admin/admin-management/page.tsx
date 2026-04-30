@@ -17,6 +17,7 @@ import {
   Trash2, Edit3, RefreshCw, ArrowUpRight, Zap,
   LayoutDashboard, LogOut
 } from 'lucide-react';
+import ActionModal from '@/components/ActionModal';
 
 /* ══════════════════════════════════════════════════════
    COLOR PALETTE — Consistent with Super Admin design
@@ -669,6 +670,7 @@ function AdminManagementContent() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [removeModal, setRemoveModal] = useState<{isOpen: boolean, adminId: string | null}>({ isOpen: false, adminId: null });
 
   const triggerNotify = (msg: string, type = 'success') => setNotification({ msg, type, show: true });
 
@@ -748,7 +750,13 @@ function AdminManagementContent() {
       triggerNotify('Cannot remove a Super Admin', 'error');
       return;
     }
-    if (!confirm(`Remove ${admin?.name} from the admin team? This cannot be undone.`)) return;
+    setRemoveModal({ isOpen: true, adminId });
+  };
+
+  const confirmRemoveAdmin = async () => {
+    if (!removeModal.adminId) return;
+    const adminId = removeModal.adminId;
+    const admin = admins.find(a => a.id === adminId);
     setActionLoading(adminId);
     try {
       await fetchWithAuth(`/admin/admins/${adminId}`, { method: 'DELETE' });
@@ -758,6 +766,7 @@ function AdminManagementContent() {
       triggerNotify(err?.message || 'Failed to remove admin', 'error');
     } finally {
       setActionLoading(null);
+      setRemoveModal({ isOpen: false, adminId: null });
     }
   };
 
@@ -1263,6 +1272,17 @@ function AdminManagementContent() {
         type={notification.type}
         visible={notification.show}
         onHide={() => setNotification(p => ({ ...p, show: false }))}
+      />
+
+      <ActionModal
+        isOpen={removeModal.isOpen}
+        title="Remove Admin"
+        message="Are you sure you want to remove this admin from the team? This action cannot be undone."
+        type="confirm"
+        danger={true}
+        confirmText="Remove"
+        onConfirm={confirmRemoveAdmin}
+        onCancel={() => setRemoveModal({ isOpen: false, adminId: null })}
       />
     </>
   );

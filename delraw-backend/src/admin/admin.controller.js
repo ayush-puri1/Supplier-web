@@ -51,6 +51,35 @@ export class AdminController {
   }
 
   /**
+   * GET /admin/health
+   * Pings the primary database and reports real service latencies.
+   * Used by the Super Admin Command Center system health panel.
+   */
+  @Get('health')
+  async getHealth() {
+    return this.adminService.getSystemHealth();
+  }
+
+  /**
+   * SUPER ADMIN: POST /admin/sessions/invalidate-all
+   * Force-expires all active platform sessions except the calling admin's own.
+   */
+  @Post('sessions/invalidate-all')
+  @Roles('SUPER_ADMIN')
+  @ApiOperation({ summary: 'SUPER ADMIN: Invalidate all active user sessions' })
+  @Bind(Request())
+  async invalidateAllSessions(req) {
+    const result = await this.sessionService.invalidateAllSessions(req.user.userId);
+    await this.adminService.logAudit(
+      req.user.userId,
+      req.user.email,
+      'ALL_SESSIONS_INVALIDATED',
+      `Platform-wide session invalidation. ${result.invalidated} sessions terminated.`,
+    );
+    return result;
+  }
+
+  /**
    * GET /admin/suppliers
    * Returns a paginated list of suppliers with optional status filtering.
    */

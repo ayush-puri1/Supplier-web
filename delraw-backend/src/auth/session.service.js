@@ -63,4 +63,20 @@ export class SessionService {
       take,
     });
   }
+
+  /**
+   * SUPER ADMIN: Invalidates ALL active sessions across the platform.
+   * Excludes the calling admin's own sessions so they remain logged in.
+   * @param {string} excludeUserId - The Super Admin's own user ID to preserve.
+   */
+  async invalidateAllSessions(excludeUserId) {
+    const result = await this.prisma.userSession.updateMany({
+      where: {
+        isActive: true,
+        userId: { not: excludeUserId },
+      },
+      data: { isActive: false },
+    });
+    return { invalidated: result.count };
+  }
 }

@@ -6,22 +6,22 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AwsService } from '../aws/aws.service';
+import { StorageService } from '../storage/storage.service';
 
 /**
  * Service to handle product lifecycle management for suppliers.
- * Includes category retrieval, image uploads via S3, and product CRUD.
+ * Includes category retrieval, image uploads via GridFS, and product CRUD.
  * Enforces platform-level limits such as max products per supplier.
  */
 @Injectable()
 export class ProductsService {
   /**
    * @param {PrismaService} prisma
-   * @param {AwsService} awsService
+   * @param {StorageService} storageService
    */
-  constructor(@Inject(PrismaService) prisma, @Inject(AwsService) awsService) {
+  constructor(@Inject(PrismaService) prisma, @Inject(StorageService) storageService) {
     this.prisma = prisma;
-    this.awsService = awsService;
+    this.storageService = storageService;
   }
 
   /**
@@ -56,8 +56,8 @@ export class ProductsService {
    */
   async uploadImage(file) {
     if (!file) throw new BadRequestException('No file provided');
-    const { url } = await this.awsService.uploadFile(file, 'products');
-    return { url };
+    const fileId = await this.storageService.uploadFile(file, 'products');
+    return { url: `/files/products/${fileId}` };
   }
 
   /**
@@ -231,10 +231,12 @@ export class ProductsService {
     if (!product)
       throw new ForbiddenException('Product not found or not yours');
 
-    const { url, key } = await this.awsService.uploadFile(
+    const fileId = await this.storageService.uploadFile(
       file,
-      `products/${productId}`,
+      'products',
     );
+    const url = `/files/products/${fileId}`;
+    const key = fileId;
 
     return this.prisma.productImage.create({
       data: { productId, url, key, order, alt },
@@ -262,7 +264,7 @@ export class ProductsService {
     if (!image || image.productId !== productId)
       throw new NotFoundException('Image not found');
 
-    await this.awsService.deleteFile(image.key);
+    await this.storageService.deleteFile(image.key, 'products');
 
     await this.prisma.productImage.delete({ where: { id: imageId } });
     return { message: 'Image deleted' };

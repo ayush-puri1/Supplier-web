@@ -7,6 +7,7 @@ import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, CheckCircle, XCircle, FileText, Download, Shield, Building2, MapPin, Globe, LayoutDashboard, Users, Package, LogOut, CheckCircle2 , Crown } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
+import ActionModal from '@/components/ActionModal';
 
 
 
@@ -39,28 +40,30 @@ export default function SupplierDetailPage() {
   const [supplier, setSupplier] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionModal, setActionModal] = useState<{isOpen: boolean, type: 'approve' | 'reject' | null}>({ isOpen: false, type: null });
 
   useEffect(() => {
     fetchWithAuth(`/admin/suppliers/${id}`).then(setSupplier).catch(console.error).finally(() => setLoading(false));
   }, [id]);
 
-  const handleApprove = async () => {
-    if (!confirm('Approve this supplier?')) return;
+  const handleApproveClick = () => setActionModal({ isOpen: true, type: 'approve' });
+  const handleRejectClick = () => setActionModal({ isOpen: true, type: 'reject' });
+
+  const confirmApprove = async () => {
     setActionLoading(true);
     try { 
       await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'VERIFIED' }) }); 
       router.push('/dashboard/admin/suppliers'); 
-    } catch (err: any) { alert(err?.response?.data?.message || 'Failed to approve'); setActionLoading(false); }
+    } catch (err: any) { alert(err?.response?.data?.message || 'Failed to approve'); setActionLoading(false); setActionModal({ isOpen: false, type: null }); }
   };
 
-  const handleReject = async () => {
-    const reason = prompt('Rejection reason:');
+  const confirmReject = async (reason: string) => {
     if (!reason) return;
     setActionLoading(true);
     try { 
       await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'REJECTED', rejectionReason: reason }) }); 
       router.push('/dashboard/admin/suppliers'); 
-    } catch (err: any) { alert(err?.response?.data?.message || 'Failed to reject'); setActionLoading(false); }
+    } catch (err: any) { alert(err?.response?.data?.message || 'Failed to reject'); setActionLoading(false); setActionModal({ isOpen: false, type: null }); }
   };
 
   if (loading) {
@@ -140,10 +143,10 @@ export default function SupplierDetailPage() {
 
                   {isPending && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <button onClick={handleReject} disabled={actionLoading} className="action-btn" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', color: '#F87171' }}>
+                      <button onClick={handleRejectClick} disabled={actionLoading} className="action-btn" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', color: '#F87171' }}>
                         <XCircle size={16} /> Reject
                       </button>
-                      <button onClick={handleApprove} disabled={actionLoading} className="action-btn" style={{ background: '#3B82F6', color: 'white', boxShadow: '0 0 15px rgba(37,99,235,0.35)' }}>
+                      <button onClick={handleApproveClick} disabled={actionLoading} className="action-btn" style={{ background: '#3B82F6', color: 'white', boxShadow: '0 0 15px rgba(37,99,235,0.35)' }}>
                         <CheckCircle2 size={16} /> Approve Supplier
                       </button>
                     </div>
@@ -211,6 +214,29 @@ export default function SupplierDetailPage() {
           </div>
         </div>
       </div>
+
+      <ActionModal
+        isOpen={actionModal.isOpen && actionModal.type === 'approve'}
+        title="Approve Supplier"
+        message="Are you sure you want to approve this supplier? They will gain access to the supplier portal."
+        type="confirm"
+        confirmText="Approve"
+        onConfirm={confirmApprove}
+        onCancel={() => setActionModal({ isOpen: false, type: null })}
+      />
+
+      <ActionModal
+        isOpen={actionModal.isOpen && actionModal.type === 'reject'}
+        title="Reject Supplier"
+        message="Please provide a reason for rejecting this supplier application."
+        type="prompt"
+        danger={true}
+        promptLabel="Rejection Reason"
+        promptPlaceholder="E.g., Incomplete documentation"
+        confirmText="Reject"
+        onConfirm={(val) => confirmReject(val || '')}
+        onCancel={() => setActionModal({ isOpen: false, type: null })}
+      />
     </>
   );
 }

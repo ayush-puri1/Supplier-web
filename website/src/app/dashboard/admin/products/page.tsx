@@ -7,6 +7,7 @@ import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, History, Search, Crown } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
+import ActionModal from '@/components/ActionModal';
 
 
 
@@ -51,6 +52,7 @@ export default function AdminProductsPage() {
   const [selected, setSelected] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [rejectModal, setRejectModal] = useState<{isOpen: boolean, productId: string | null}>({ isOpen: false, productId: null });
 
   const loadProducts = async () => {
     try { const url = activeTab === 'ALL' ? '/admin/products' : `/admin/products?status=${activeTab}`; const data = await fetchWithAuth(url); setProducts(Array.isArray(data) ? data : []); } catch (err) { console.error(err); } finally { setLoading(false); }
@@ -64,10 +66,19 @@ export default function AdminProductsPage() {
   };
 
   const handleUpdate = async (id: string, status: string) => {
-    let rejectionReason = '';
-    if (status === 'REJECTED') { rejectionReason = prompt('Rejection reason:') || ''; if (!rejectionReason) return; }
+    if (status === 'REJECTED') { 
+      setRejectModal({ isOpen: true, productId: id });
+      return; 
+    }
     setActionLoading(true);
-    try { await fetchWithAuth(`/admin/products/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, rejectionReason }) }); await loadProducts(); await loadDetail(id); } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); } finally { setActionLoading(false); }
+    try { await fetchWithAuth(`/admin/products/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); await loadProducts(); await loadDetail(id); } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); } finally { setActionLoading(false); }
+  };
+
+  const confirmReject = async (reason: string) => {
+    if (!reason || !rejectModal.productId) return;
+    const id = rejectModal.productId;
+    setActionLoading(true);
+    try { await fetchWithAuth(`/admin/products/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'REJECTED', rejectionReason: reason }) }); await loadProducts(); await loadDetail(id); } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); } finally { setActionLoading(false); setRejectModal({ isOpen: false, productId: null }); }
   };
 
   return (
@@ -284,6 +295,19 @@ export default function AdminProductsPage() {
           </div>
         </div>
       </div>
+
+      <ActionModal
+        isOpen={rejectModal.isOpen}
+        title="Reject Product"
+        message="Please provide a reason for rejecting this product."
+        type="prompt"
+        danger={true}
+        promptLabel="Rejection Reason"
+        promptPlaceholder="E.g., Inappropriate content, low quality image"
+        confirmText="Reject Product"
+        onConfirm={(val) => confirmReject(val || '')}
+        onCancel={() => setRejectModal({ isOpen: false, productId: null })}
+      />
     </>
   );
 }

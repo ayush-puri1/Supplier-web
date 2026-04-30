@@ -106,4 +106,13 @@ export class AuditService {
       limit,
     };
   }
+
+  /**
+   * Lightweight MongoDB connectivity check.
+   * Runs a count query (no write) to verify the connection is alive.
+   */
+  async ping() {
+    await this.auditLogModel.countDocuments({}).exec();
+    return true;
+  }
 }

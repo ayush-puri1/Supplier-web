@@ -12,7 +12,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { AdminModule } from './admin/admin.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { APP_GUARD } from '@nestjs/core';
-import { AwsModule } from './aws/aws.module';
+import { StorageModule } from './storage/storage.module';
 import { MailModule } from './mail/mail.module';
 import { AuditModule } from './audit/audit.module';
 import { AnalyticsModule } from './analytics/analytics.module';
@@ -36,7 +36,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     DocumentsModule,
     AdminModule,
     SupplierModule,
-    AwsModule,
+    StorageModule,
     MailModule,
     AuditModule,
     AnalyticsModule,

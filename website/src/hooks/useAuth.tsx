@@ -20,7 +20,6 @@ interface AuthContextType {
     loading: boolean;
 }
 
-export const MOCK_MODE = false; // Set to false to use real backend
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -41,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(parsedUser);
 
                 // If company name is missing and user is a supplier, try to fetch it
-                if (parsedUser.role === 'SUPPLIER' && !parsedUser.companyName && !MOCK_MODE) {
+                if (parsedUser.role === 'SUPPLIER' && !parsedUser.companyName) {
                     fetchWithAuth('/supplier/me')
                         .then(data => {
                             if (data.companyName) {
@@ -57,18 +56,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 localStorage.removeItem('user');
                 localStorage.removeItem('token');
             }
-        } else if (MOCK_MODE) {
-            // Provide a mock user for previewing
-            setToken('mock-token');
-            const mockUser: User = {
-                id: 'mock-id',
-                email: 'mock@delraw.com',
-                role: 'SUPPLIER',
-                companyName: 'Delraw Manufacturing Co.'
-            };
-            setUser(mockUser);
-            localStorage.setItem('token', 'mock-token');
-            localStorage.setItem('user', JSON.stringify(mockUser));
         }
         setLoading(false);
     }, []);

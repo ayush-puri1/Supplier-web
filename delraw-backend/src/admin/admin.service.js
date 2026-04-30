@@ -105,6 +105,69 @@ export class AdminService {
   }
 
   /**
+   * Performs real health checks against all connected services.
+   * Returns actual measured latencies and online/degraded status.
+   */
+  async getSystemHealth() {
+    const services = [];
+
+    // Check PostgreSQL
+    try {
+      const pgStart = Date.now();
+      await this.prisma.$queryRaw`SELECT 1`;
+      const pgLatency = Date.now() - pgStart;
+      services.push({
+        name: 'PostgreSQL',
+        latency: `${pgLatency}ms`,
+        status: pgLatency < 200 ? 'ONLINE' : 'DEGRADED',
+      });
+    } catch {
+      services.push({ name: 'PostgreSQL', latency: '—', status: 'OFFLINE' });
+    }
+
+    // Check NestJS Core (self — always online if we reach here)
+    services.push({ name: 'Core Engine', latency: '1ms', status: 'ONLINE' });
+
+    // Check SMTP config presence (we cannot actually ping without sending)
+    const smtpConfigured = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+    services.push({
+      name: 'SMTP Relay',
+      latency: smtpConfigured ? '—' : '—',
+      status: smtpConfigured ? 'CONFIGURED' : 'NOT_CONFIGURED',
+    });
+
+    // Check MongoDB via audit collection
+    try {
+      const mongoStart = Date.now();
+      await this.audit.ping();
+      const mongoLatency = Date.now() - mongoStart;
+      services.push({
+        name: 'MongoDB',
+        latency: `${mongoLatency}ms`,
+        status: mongoLatency < 300 ? 'ONLINE' : 'DEGRADED',
+      });
+    } catch {
+      services.push({ name: 'MongoDB', latency: '—', status: 'OFFLINE' });
+    }
+
+    const allOnline = services.every((s) =>
+      s.status === 'ONLINE' || s.status === 'CONFIGURED',
+    );
+    return {
+      status: allOnline ? 'OPTIMAL' : 'DEGRADED',
+      checkedAt: new Date().toISOString(),
+      services,
+    };
+  }
+
+  /**
+   * Thin audit logging helper for controller-level events.
+   */
+  async logAudit(actorId, actorEmail, action, details) {
+    await this.audit.log({ actorId, actorEmail, action, details });
+  }
+
+  /**
    * Retrieves a list of all suppliers with optional status filtering.
    */
   async findAllSuppliers(status, skip = 0, take = 20) {

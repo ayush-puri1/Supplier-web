@@ -47,7 +47,7 @@ delraw/
 │   │   ├── products/        # Supplier product catalog management
 │   │   ├── audit/           # Immutable action logging
 │   │   ├── mail/            # Email notifications (Nodemailer)
-│   │   ├── aws/             # S3 file uploads
+│   │   ├── storage/         # MongoDB GridFS file uploads
 │   │   └── common/          # Shared DTOs, interceptors, filters
 │   └── prisma/
 │       └── schema.prisma    # Full database schema
@@ -74,7 +74,7 @@ delraw/
 | **Authentication** | JWT (15 min) + Refresh tokens (7 days) | Short-lived access, revocable sessions |
 | **Frontend** | Next.js 16 App Router | SSR, file-based routing, React Server Components |
 | **Styling** | Tailwind CSS 4 | Utility-first, fast iteration |
-| **File Storage** | AWS S3 | Scalable document and image storage |
+| **File Storage** | MongoDB GridFS | Self-hosted document and image storage |
 | **Email** | Nodemailer | OTP delivery, status change notifications |
 | **API Docs** | Swagger / OpenAPI | Auto-generated from decorators |
 
@@ -99,7 +99,7 @@ DRAFT ──→ SUBMITTED ──→ UNDER_REVIEW ──→ VERIFIED
 ```
 
 - Self-service registration with OTP email verification
-- Document upload (GST, PAN, business certificates) to S3
+- Document upload (GST, PAN, business certificates) to MongoDB GridFS
 - Rejection always includes a written reason visible on supplier dashboard
 - Password reset via email OTP flow
 
@@ -112,7 +112,7 @@ DRAFT ──→ PENDING_APPROVAL ──→ LIVE
 ```
 
 - Suppliers manage variants (size, colour, price, stock)
-- Product images stored in S3 with ordering support
+- Product images stored in MongoDB GridFS with ordering support
 - Category validation on creation
 - Max products per supplier configurable by admin
 
@@ -146,7 +146,7 @@ Every significant action is recorded and immutable:
 
 - Node.js 18+
 - PostgreSQL 14+
-- AWS S3 bucket (for file uploads)
+- MongoDB (for GridFS and audit logs)
 - SMTP credentials (for email)
 
 ### Backend Setup
@@ -163,10 +163,7 @@ cp .env.example .env
 # 3. Run database migrations
 npx prisma migrate dev
 
-# 4. Seed with test data
-npx prisma db seed
-
-# 5. Start development server
+# 4. Start development server
 npm run start:dev
 ```
 
@@ -197,11 +194,8 @@ DATABASE_URL="postgresql://user:password@localhost:5432/delraw"
 JWT_SECRET="your-super-secret-jwt-key-change-this"
 JWT_EXPIRES_IN="15m"
 
-# AWS S3
-AWS_ACCESS_KEY_ID="your-access-key"
-AWS_SECRET_ACCESS_KEY="your-secret-key"
-AWS_REGION="ap-south-1"
-AWS_S3_BUCKET="delraw-uploads"
+# MongoDB (GridFS & Audit Logs)
+MONGODB_URI="mongodb://localhost:27017/delraw_audit"
 
 # Email (SMTP)
 SMTP_HOST="smtp.gmail.com"
@@ -223,17 +217,11 @@ NEXT_PUBLIC_API_URL="http://localhost:3000"
 
 ---
 
-## Seed Accounts
+## Initial Access
 
-After running `npx prisma db seed`, these test accounts are available:
+To access the admin portal for the first time, you must manually insert a Super Admin account into your database (e.g., via `npx prisma studio`), ensuring you provide a valid bcrypt hashed password.
 
-| Role | Email | Password |
-|---|---|---|
-| Super Admin | `superadmin@delraw.com` | `SuperAdmin123!` |
-| Admin | `admin@delraw.com` | `Admin123!` |
-| Supplier | `supplier@delraw.com` | `Supplier123!` |
-
-> ⚠️ Change all passwords before any production deployment.
+> ⚠️ Ensure strong passwords are used in any production deployment.
 
 ---
 
@@ -379,7 +367,6 @@ npm run start:dev      # Start with hot reload
 npm run start:prod     # Production start
 npm run build          # Compile TypeScript
 npx prisma studio      # Open database GUI
-npx prisma db seed     # Seed test data
 npx prisma migrate dev # Run pending migrations
 
 # Frontend

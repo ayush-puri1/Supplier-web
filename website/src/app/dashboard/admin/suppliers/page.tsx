@@ -51,17 +51,11 @@ export default function AdminSuppliersPage() {
   const [activeTab, setActiveTab] = useState('ALL');
   const [selected, setSelected] = useState<any>(null);
   const [internalNote, setInternalNote] = useState('');
-  
-  const handleChangeRole = async (userId: string, role: string) => {
-    if (!confirm(`Change account role to ${role}?`)) return;
-    setActionLoading(true);
-    try {
-      await fetchWithAuth(`/admin/users/${userId}/role`, { method: 'PATCH', body: JSON.stringify({ role }) });
-      await loadSuppliers();
-      if (selected?.userId === userId) setSelected({ ...selected, user: { ...selected.user, role } });
-    } catch (err: any) { alert(err?.response?.data?.message || 'Failed to change role'); } finally { setActionLoading(false); }
-  };
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Inline rejection modal state
+  const [rejectModal, setRejectModal] = useState<{ open: boolean; id: string; type: 'supplier' | 'role'; role?: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const loadSuppliers = async () => {
     try {
@@ -73,15 +67,41 @@ export default function AdminSuppliersPage() {
 
   useEffect(() => { setLoading(true); loadSuppliers(); }, [activeTab]);
 
-  const handleUpdateStatus = async (id: string, status: string) => {
-    let rejectionReason = '';
-    if (status === 'REJECTED') { rejectionReason = prompt('Rejection reason:') || ''; if (!rejectionReason) return; }
+  const handleUpdateStatus = async (id: string, status: string, reason?: string) => {
+    // For REJECTED status, open the styled inline modal first
+    if (status === 'REJECTED' && !reason) {
+      setRejectModal({ open: true, id, type: 'supplier' });
+      setRejectReason('');
+      return;
+    }
     setActionLoading(true);
     try {
-      await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, rejectionReason }) });
+      await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, rejectionReason: reason || '' }) });
       await loadSuppliers();
       if (selected?.id === id) { const updated = await fetchWithAuth(`/admin/suppliers/${id}`); setSelected(updated); }
     } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); } finally { setActionLoading(false); }
+  };
+
+  const handleChangeRole = async (userId: string, role: string) => {
+    setRejectModal({ open: true, id: userId, type: 'role', role });
+    setRejectReason('');
+  };
+
+  const handleConfirmModal = async () => {
+    if (!rejectModal) return;
+    if (rejectModal.type === 'supplier') {
+      if (!rejectReason.trim()) return;
+      setRejectModal(null);
+      await handleUpdateStatus(rejectModal.id, 'REJECTED', rejectReason.trim());
+    } else if (rejectModal.type === 'role') {
+      setRejectModal(null);
+      setActionLoading(true);
+      try {
+        await fetchWithAuth(`/admin/users/${rejectModal.id}/role`, { method: 'PATCH', body: JSON.stringify({ role: rejectModal.role }) });
+        await loadSuppliers();
+        if (selected?.userId === rejectModal.id) setSelected({ ...selected, user: { ...selected.user, role: rejectModal.role } });
+      } catch (err: any) { alert(err?.response?.data?.message || 'Failed to change role'); } finally { setActionLoading(false); }
+    }
   };
 
   const handleSaveNote = async () => {
@@ -91,6 +111,39 @@ export default function AdminSuppliersPage() {
 
   return (
     <>
+      {/* ─── INLINE CONFIRMATION MODAL ─── */}
+      {rejectModal?.open && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#1A1A1A', borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)', padding: 32, maxWidth: 420, width: '90%' }}>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 22, fontWeight: 700, color: 'white', marginBottom: 8 }}>
+              {rejectModal.type === 'role' ? `Change Role to ${rejectModal.role}?` : 'Reject Supplier'}
+            </h3>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>
+              {rejectModal.type === 'role' ? 'This will change the account role immediately. Confirm to proceed.' : 'Provide a clear reason. The supplier will be notified by email.'}
+            </p>
+            {rejectModal.type === 'supplier' && (
+              <textarea
+                autoFocus
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                placeholder="e.g. Incomplete GST documentation..."
+                rows={3}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(239,68,68,0.3)', color: 'white', fontFamily: 'var(--font-body)', fontSize: 13, resize: 'none', outline: 'none', marginBottom: 20 }}
+              />
+            )}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setRejectModal(null)} style={{ flex: 1, padding: '12px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button
+                onClick={handleConfirmModal}
+                disabled={rejectModal.type === 'supplier' && !rejectReason.trim()}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: rejectModal.type === 'role' ? '#2563EB' : '#EF4444', border: 'none', color: 'white', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (rejectModal.type === 'supplier' && !rejectReason.trim()) ? 0.5 : 1 }}
+              >
+                {rejectModal.type === 'role' ? 'Confirm' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
         :root { --font-heading:'Newsreader',serif; --font-body:'DM Sans',sans-serif; }

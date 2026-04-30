@@ -11,6 +11,7 @@ import { ArrowLeft, LayoutDashboard, Users, Package, Shield, LogOut, BarChart3, 
 import Sidebar from '@/components/Sidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 import StatusBadge from '@/components/StatusBadge';
+import ActionModal from '@/components/ActionModal';
 
 function CustomAlert({ type, message, onClose }: { type: 'success' | 'error', message: string, onClose: () => void }) {
   const isErr = type === 'error';
@@ -50,6 +51,7 @@ export default function UserManagementPage() {
   // Detail sidebar
   const [resetPassword, setResetPassword] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [roleModal, setRoleModal] = useState<{isOpen: boolean, userId: string | null, role: string | null}>({ isOpen: false, userId: null, role: null });
 
   const loadUsers = async () => {
     try { const data = await fetchWithAuth('/admin/users'); setUsers(Array.isArray(data) ? data : []); } catch (err) { console.error(err); } finally { setLoading(false); }
@@ -57,24 +59,19 @@ export default function UserManagementPage() {
 
   useEffect(() => { loadUsers(); }, []);
 
-  // Access check (DISABLED FOR NOW)
-  /*
-  if (false && (!loading && currentUser?.role !== 'SUPER_ADMIN')) {
-    return (
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
-        <AdminSidebar />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-          <ShieldOff size={64} color="rgba(255,255,255,0.1)" style={{ marginBottom: 24 }} />
-          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 700, color: 'white', marginBottom: 8 }}>Access Denied</h1>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>This page is restricted to Super Admin users only.</p>
-        </div>
-      </div>
-    );
-  }
-  */
-
   const admins = users.filter(u => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN');
   const suppliers = users.filter(u => u.role === 'SUPPLIER');
+
+  // Redirect non-Super-Admins away from this page
+  useEffect(() => {
+    if (!loading && currentUser && currentUser.role !== 'SUPER_ADMIN') {
+      router.replace('/dashboard/admin');
+    }
+  }, [loading, currentUser]);
+
+  if (!loading && currentUser && currentUser.role !== 'SUPER_ADMIN') {
+    return null; // redirect in progress
+  }
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault(); setError(''); setCreating(true);
@@ -91,10 +88,15 @@ export default function UserManagementPage() {
     try { await fetchWithAuth(`/admin/users/${id}/active`, { method: 'PATCH', body: JSON.stringify({ isActive }) }); await loadUsers(); } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); } finally { setActionLoading(false); }
   };
 
-  const handleChangeRole = async (id: string, role: string) => {
-    if (!confirm(`Change role to ${role}?`)) return;
+  const handleChangeRoleClick = (id: string, role: string) => {
+    setRoleModal({ isOpen: true, userId: id, role });
+  };
+
+  const confirmChangeRole = async () => {
+    if (!roleModal.userId || !roleModal.role) return;
+    const { userId: id, role } = roleModal;
     setActionLoading(true);
-    try { await fetchWithAuth(`/admin/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }); await loadUsers(); if (selected?.id === id) setSelected({ ...selected, role }); } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); } finally { setActionLoading(false); }
+    try { await fetchWithAuth(`/admin/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }); await loadUsers(); if (selected?.id === id) setSelected({ ...selected, role }); } catch (err: any) { alert(err?.response?.data?.message || 'Failed'); } finally { setActionLoading(false); setRoleModal({ isOpen: false, userId: null, role: null }); }
   };
 
   const handleResetPassword = async (id: string) => {
@@ -244,7 +246,7 @@ export default function UserManagementPage() {
                             <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Change Role</p>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                               {['SUPPLIER', 'ADMIN', 'SUPER_ADMIN'].map(r => (
-                                <button key={r} disabled={actionLoading || selected.id === currentUser?.id} onClick={() => handleChangeRole(selected.id, r)} style={{ padding: '8px 12px', borderRadius: 8, border: selected.role === r ? '1px solid #3B82F6' : '1px solid rgba(255,255,255,0.1)', background: selected.role === r ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.03)', color: selected.role === r ? '#60A5FA' : 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer', opacity: (actionLoading || selected.id === currentUser?.id) ? 0.3 : 1 }}>
+                                <button key={r} disabled={actionLoading || selected.id === currentUser?.id} onClick={() => handleChangeRoleClick(selected.id, r)} style={{ padding: '8px 12px', borderRadius: 8, border: selected.role === r ? '1px solid #3B82F6' : '1px solid rgba(255,255,255,0.1)', background: selected.role === r ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.03)', color: selected.role === r ? '#60A5FA' : 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer', opacity: (actionLoading || selected.id === currentUser?.id) ? 0.3 : 1 }}>
                                   {r.replace('_', ' ')}
                                 </button>
                               ))}
@@ -316,6 +318,17 @@ export default function UserManagementPage() {
           </div>
         </div>
       </div>
+
+      <ActionModal
+        isOpen={roleModal.isOpen}
+        title="Change Role"
+        message={`Are you sure you want to change this user's role to ${roleModal.role}?`}
+        type="confirm"
+        danger={true}
+        confirmText="Change Role"
+        onConfirm={confirmChangeRole}
+        onCancel={() => setRoleModal({ isOpen: false, userId: null, role: null })}
+      />
     </>
   );
 }
