@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * Service for overseeing the entire platform.
@@ -21,15 +22,18 @@ export class AdminService {
    * @param {PrismaService} prisma
    * @param {AuditService} audit
    * @param {MailService} mail
+   * @param {NotificationsService} notifications
    */
   constructor(
     @Inject(PrismaService) prisma,
     @Inject(AuditService) audit,
     @Inject(MailService) mail,
+    @Inject(NotificationsService) notifications,
   ) {
     this.prisma = prisma;
     this.audit = audit;
     this.mail = mail;
+    this.notifications = notifications;
   }
 
   /**
@@ -267,11 +271,20 @@ export class AdminService {
         result.user.email,
         result.companyName,
       );
+      await this.notifications.notifySupplierApproved(
+        supplier.userId,
+        result.companyName,
+      );
     } else if (newStatus === 'REJECTED') {
       await this.mail.sendSupplierRejected(
         result.user.email,
         result.companyName,
         rejectionReason || 'No reason provided',
+      );
+      await this.notifications.notifySupplierRejected(
+        supplier.userId,
+        result.companyName,
+        rejectionReason,
       );
     }
 
@@ -385,14 +398,31 @@ export class AdminService {
 
     // Notify the supplier
     const supplierEmail = result.supplier.user.email;
+    const supplierUserId = await this.prisma.supplier.findUnique({
+      where: { id: product.supplierId },
+      select: { userId: true },
+    });
     if (newStatus === 'LIVE') {
       await this.mail.sendProductApproved(supplierEmail, result.name);
+      if (supplierUserId) {
+        await this.notifications.notifyProductApproved(
+          supplierUserId.userId,
+          result.name,
+        );
+      }
     } else if (newStatus === 'REJECTED') {
       await this.mail.sendProductRejected(
         supplierEmail,
         result.name,
         rejectionReason || 'No reason provided',
       );
+      if (supplierUserId) {
+        await this.notifications.notifyProductRejected(
+          supplierUserId.userId,
+          result.name,
+          rejectionReason,
+        );
+      }
     }
 
     await this.audit.log({

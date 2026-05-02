@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutDashboard, Users, Package, FileText, Settings, 
   Briefcase, Bell, LogOut, Building, Shield, Crown, 
-  BarChart3, History, UserCog, UserCheck 
+  BarChart3, History, UserCog, UserCheck, ShoppingCart 
 } from "lucide-react";
 
 interface SidebarProps {
@@ -31,6 +31,7 @@ export default function Sidebar({ active }: SidebarProps) {
     const supplierLinks = [
         { name: 'Dashboard', href: '/dashboard/supplier', icon: LayoutDashboard, key: 'dashboard' },
         { name: 'My Products', href: '/dashboard/supplier/products', icon: Package, key: 'products' },
+        { name: 'Orders', href: '/dashboard/supplier/orders', icon: ShoppingCart, key: 'orders' },
         { name: 'Business Profile', href: '/dashboard/supplier/profile', icon: Briefcase, key: 'profile' },
         { name: 'Notifications', href: '/dashboard/supplier/notifications', icon: Bell, key: 'notifications' },
         { name: 'Settings', href: '/dashboard/supplier/settings', icon: Settings, key: 'settings' },
@@ -41,6 +42,7 @@ export default function Sidebar({ active }: SidebarProps) {
         { name: 'Analytics', href: '/dashboard/admin/analytics', icon: BarChart3, key: 'analytics' },
         { name: 'Suppliers', href: '/dashboard/admin/suppliers', icon: Users, key: 'suppliers' },
         { name: 'Products', href: '/dashboard/admin/products', icon: Package, key: 'products' },
+        { name: 'Orders', href: '/dashboard/admin/orders', icon: ShoppingCart, key: 'orders' },
         { name: 'Audit Logs', href: '/dashboard/admin/audit-logs', icon: History, key: 'audit' },
     ];
 
@@ -49,6 +51,7 @@ export default function Sidebar({ active }: SidebarProps) {
         { name: 'User Control', href: '/dashboard/admin/users', icon: UserCog, key: 'users' },
         { name: 'Supplier Pipeline', href: '/dashboard/admin/suppliers', icon: Users, key: 'suppliers' },
         { name: 'Product Moderation', href: '/dashboard/admin/products', icon: Package, key: 'products' },
+        { name: 'Orders', href: '/dashboard/admin/orders', icon: ShoppingCart, key: 'orders' },
         { name: 'Analytics', href: '/dashboard/admin/analytics', icon: BarChart3, key: 'analytics' },
         { name: 'Audit Logs', href: '/dashboard/admin/audit-logs', icon: History, key: 'audit' },
         { name: 'System Config', href: '/dashboard/super-admin/config', icon: Settings, key: 'config' },

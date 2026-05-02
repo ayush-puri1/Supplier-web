@@ -6,6 +6,7 @@ import { ProductsModule } from '../products/products.module';
 import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
 import { MailModule } from '../mail/mail.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 /**
  * Centrailized module for platform oversight.
@@ -13,7 +14,7 @@ import { MailModule } from '../mail/mail.module';
  * broad management capabilities to staff.
  */
 @Module({
-  imports: [PrismaModule, ProductsModule, AuditModule, AuthModule, MailModule],
+  imports: [PrismaModule, ProductsModule, AuditModule, AuthModule, MailModule, NotificationsModule],
   providers: [AdminService],
   controllers: [AdminController],
 })

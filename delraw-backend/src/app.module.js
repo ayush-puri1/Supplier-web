@@ -16,6 +16,9 @@ import { StorageModule } from './storage/storage.module';
 import { MailModule } from './mail/mail.module';
 import { AuditModule } from './audit/audit.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { OrdersModule } from './orders/orders.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -40,6 +43,9 @@ import { AnalyticsModule } from './analytics/analytics.module';
     MailModule,
     AuditModule,
     AnalyticsModule,
+    OrdersModule,
+    NotificationsModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,12 +1,12 @@
 <div align="center">
 
 ```
-██████╗ ███████╗██╗     ██████╗  █████╗ ██╗    ██╗
-██╔══██╗██╔════╝██║     ██╔══██╗██╔══██╗██║    ██║
-██║  ██║█████╗  ██║     ██████╔╝███████║██║ █╗ ██║
-██║  ██║██╔══╝  ██║     ██╔══██╗██╔══██║██║███╗██║
-██████╔╝███████╗███████╗██║  ██║██║  ██║╚███╔███╔╝
-╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚══╝╚══╝
+     ██████╗ ███████╗██╗     ██████╗  █████╗ ██╗    ██╗
+     ██╔══██╗██╔════╝██║     ██╔══██╗██╔══██╗██║    ██║
+     ██║  ██║█████╗  ██║     ██████╔╝███████║██║ █╗ ██║
+     ██║  ██║██╔══╝  ██║     ██╔══██╗██╔══██║██║███╗██║
+     ██████╔╝███████╗███████╗██║  ██║██║  ██║╚███╔███╔╝
+     ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚══╝╚══╝
 ```
 
 **Supplier Portal** — Built for scale. Designed for trust.
@@ -167,8 +167,8 @@ npx prisma migrate dev
 npm run start:dev
 ```
 
-API available at `http://localhost:3000`
-Swagger docs at `http://localhost:3000/api/docs`
+API available at `http://localhost:5000`
+Swagger docs at `http://localhost:5000/api/docs`
 
 ### Frontend Setup
 
@@ -178,7 +178,7 @@ npm install
 npm run dev
 ```
 
-Frontend available at `http://localhost:3001`
+Frontend available at `http://localhost:3000`
 
 ---
 
@@ -205,14 +205,14 @@ SMTP_PASS="your-app-password"
 SMTP_FROM="noreply@delraw.com"
 
 # App
-FRONTEND_URL="http://localhost:3001"
-PORT=3000
+FRONTEND_URL="http://localhost:3000"
+PORT=5000
 ```
 
 ### Frontend — `website/.env.local`
 
 ```env
-NEXT_PUBLIC_API_URL="http://localhost:3000"
+NEXT_PUBLIC_API_URL="http://localhost:5000"
 ```
 
 ---
