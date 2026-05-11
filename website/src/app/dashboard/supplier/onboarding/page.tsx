@@ -11,7 +11,7 @@ import api from '@/lib/api';
 import {
   ArrowLeft, ArrowRight, Check, Shield, MapPin, FileText,
   ClipboardCheck, Lock, Building2, Hash, Calendar, Users,
-  Package, Globe, Bell, LayoutDashboard, Settings, LogOut,
+  Package, ShoppingCart, Globe, Bell, LayoutDashboard, Settings, LogOut,
   Plus, User, Clock, ChevronRight,
 } from 'lucide-react';
 
@@ -44,6 +44,7 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
   const navItems = [
     { label: 'Dashboard',        icon: <LayoutDashboard size={16} />, href: '/dashboard/supplier',              active: false },
     { label: 'My Products',      icon: <Package size={16} />,         href: '/dashboard/supplier/products',      active: false },
+    { label: 'Orders',           icon: <ShoppingCart size={16} />,    href: '/dashboard/supplier/orders',        active: false },
     { label: 'Business Profile', icon: <User size={16} />,            href: '/dashboard/supplier/profile',       active: true  },
     { label: 'Notifications',    icon: <Bell size={16} />,            href: '/dashboard/supplier/notifications', active: false },
     { label: 'Settings',         icon: <Settings size={16} />,        href: '/dashboard/supplier/settings',      active: false },

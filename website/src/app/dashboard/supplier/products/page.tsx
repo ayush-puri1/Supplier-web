@@ -8,7 +8,7 @@ import { fetchWithAuth } from '@/lib/api';
 import {
   Package, Plus, Edit2, Trash2, LayoutDashboard,
   User, Bell, Settings, LogOut, Search, Clock, Truck,
-  CheckCircle2, AlertCircle, XCircle,
+  CheckCircle2, AlertCircle, XCircle, ShoppingCart
 } from 'lucide-react';
 import ActionModal from '@/components/ActionModal';
 
@@ -19,6 +19,7 @@ function Sidebar() {
   const navItems = [
     { label: 'Dashboard',        icon: <LayoutDashboard size={16} />, href: '/dashboard/supplier',              active: false },
     { label: 'My Products',      icon: <Package size={16} />,         href: '/dashboard/supplier/products',      active: true  },
+    { label: 'Orders',           icon: <ShoppingCart size={16} />,    href: '/dashboard/supplier/orders',        active: false },
     { label: 'Business Profile', icon: <User size={16} />,            href: '/dashboard/supplier/profile',       active: false },
     { label: 'Notifications',    icon: <Bell size={16} />,            href: '/dashboard/supplier/notifications', active: false },
     { label: 'Settings',         icon: <Settings size={16} />,        href: '/dashboard/supplier/settings',      active: false },

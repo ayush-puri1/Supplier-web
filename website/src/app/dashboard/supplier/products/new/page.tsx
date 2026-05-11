@@ -8,7 +8,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  ArrowLeft, UploadCloud, X, Plus, Trash2, Package,
+  ArrowLeft, UploadCloud, X, Plus, Trash2, Package, ShoppingCart,
   LayoutDashboard, User, Bell, Settings, LogOut,
   Tag, Layers, ImageIcon, Check,
 } from 'lucide-react';
@@ -20,6 +20,7 @@ function Sidebar() {
   const navItems = [
     { label: 'Dashboard',        icon: <LayoutDashboard size={16} />, href: '/dashboard/supplier',              active: false },
     { label: 'My Products',      icon: <Package size={16} />,         href: '/dashboard/supplier/products',      active: true  },
+    { label: 'Orders',           icon: <ShoppingCart size={16} />,    href: '/dashboard/supplier/orders',        active: false },
     { label: 'Business Profile', icon: <User size={16} />,            href: '/dashboard/supplier/profile',       active: false },
     { label: 'Notifications',    icon: <Bell size={16} />,            href: '/dashboard/supplier/notifications', active: false },
     { label: 'Settings',         icon: <Settings size={16} />,        href: '/dashboard/supplier/settings',      active: false },

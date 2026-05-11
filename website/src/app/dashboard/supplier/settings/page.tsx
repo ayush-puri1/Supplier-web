@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  LayoutDashboard, Package, User, Bell, Settings, LogOut,
+  LayoutDashboard, Package, ShoppingCart, User, Bell, Settings, LogOut,
   Camera, Shield, BellRing, PhoneCall, Trash2, Mail, MessageCircle, AlertTriangle
 } from 'lucide-react';
 
@@ -16,6 +16,7 @@ function Sidebar() {
   const navItems = [
     { label: 'Dashboard',        icon: <LayoutDashboard size={16} />, href: '/dashboard/supplier',              active: false },
     { label: 'My Products',      icon: <Package size={16} />,         href: '/dashboard/supplier/products',      active: false },
+    { label: 'Orders',           icon: <ShoppingCart size={16} />,    href: '/dashboard/supplier/orders',        active: false },
     { label: 'Business Profile', icon: <User size={16} />,            href: '/dashboard/supplier/profile',       active: false },
     { label: 'Notifications',    icon: <Bell size={16} />,            href: '/dashboard/supplier/notifications', active: false },
     { label: 'Settings',         icon: <Settings size={16} />,        href: '/dashboard/supplier/settings',      active: true  },

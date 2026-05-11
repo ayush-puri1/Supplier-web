@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { fetchWithAuth } from '@/lib/api';
+import api, { fetchWithAuth } from '@/lib/api';
 
 export default function OnboardingForm({ profile, onComplete }: { profile?: any; onComplete: () => void }) {
     const [currentStep, setCurrentStep] = useState(1);
@@ -19,7 +19,7 @@ export default function OnboardingForm({ profile, onComplete }: { profile?: any;
         city: profile?.city || '',
         state: profile?.state || '',
         pincode: profile?.pincode || '',
-        // Step 3 (files - mocked as strings for now, normally would be uploaded URLs)
+        // Step 3 (files)
         gstDoc: null as File | null,
         panDoc: null as File | null,
         businessDoc: null as File | null,
@@ -60,7 +60,21 @@ export default function OnboardingForm({ profile, onComplete }: { profile?: any;
                     city: formData.city,
                 }),
             });
-            // Then submit for review (Mocking doc upload for now)
+
+            // Upload documents
+            const uploadDoc = async (file: File | null, type: string) => {
+                if (!file) return;
+                const fd = new FormData();
+                fd.append('file', file);
+                fd.append('type', type);
+                await api.post('/documents/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+            };
+
+            await uploadDoc(formData.gstDoc, 'GST');
+            await uploadDoc(formData.panDoc, 'PAN');
+            await uploadDoc(formData.businessDoc, 'BUSINESS_REGISTRATION');
+
+            // Then submit for review
             await fetchWithAuth('/supplier/submit', {
                 method: 'POST',
             });

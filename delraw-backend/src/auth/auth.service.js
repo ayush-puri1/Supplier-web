@@ -100,7 +100,9 @@ export class AuthService {
    */
   async sendOtp(email) {
     let user = await this.prisma.user.findUnique({ where: { email } });
-    if (user && user.isEmailVerified)
+    // In dev bypass mode, allow re-sending OTP even to verified users for testing
+    const isBypass = process.env.DEV_BYPASS_OTP === 'true' && process.env.NODE_ENV !== 'production';
+    if (user && user.isEmailVerified && !isBypass)
       throw new BadRequestException('Email already verified');
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -136,7 +138,8 @@ export class AuthService {
   async verifyOtp(email, otp, password, companyName) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new BadRequestException('User not found');
-    if (user.isEmailVerified)
+    const isBypassMode = process.env.DEV_BYPASS_OTP === 'true' && process.env.NODE_ENV !== 'production';
+    if (user.isEmailVerified && !isBypassMode)
       throw new BadRequestException('Email already verified');
 
     // Enforcement of retry limits
@@ -152,11 +155,18 @@ export class AuthService {
       }
     }
 
+    // DEV BYPASS: Accept '000000' as master OTP in non-production environments
+    const isBypassOtp =
+      process.env.NODE_ENV !== 'production' &&
+      process.env.DEV_BYPASS_OTP === 'true' &&
+      otp === '000000';
+
     if (
-      !user.otp ||
-      !user.otpExpiry ||
-      user.otpExpiry < new Date() ||
-      user.otp !== otp
+      !isBypassOtp &&
+      (!user.otp ||
+        !user.otpExpiry ||
+        user.otpExpiry < new Date() ||
+        user.otp !== otp)
     ) {
       await this.prisma.user.update({
         where: { email },
@@ -397,10 +407,18 @@ export class AuthService {
    */
   async resetPassword(email, otp, password) {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || user.passwordResetOtp !== otp)
+    if (!user) throw new UnauthorizedException('Invalid or expired OTP');
+
+    // DEV BYPASS: Accept '000000' as master OTP in non-production environments
+    const isBypassOtp =
+      process.env.NODE_ENV !== 'production' &&
+      process.env.DEV_BYPASS_OTP === 'true' &&
+      otp === '000000';
+
+    if (!isBypassOtp && user.passwordResetOtp !== otp)
       throw new UnauthorizedException('Invalid or expired OTP');
 
-    if (user.passwordResetExpiry && new Date() > user.passwordResetExpiry)
+    if (!isBypassOtp && user.passwordResetExpiry && new Date() > user.passwordResetExpiry)
       throw new UnauthorizedException('OTP expired');
 
     if (password) {

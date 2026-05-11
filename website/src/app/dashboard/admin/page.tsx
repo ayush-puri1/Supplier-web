@@ -74,7 +74,7 @@ export default function AdminDashboard() {
   const confirmReject = async (reason: string) => {
     if (!reason || !rejectModal.id || !rejectModal.type) return;
     const { id, type } = rejectModal;
-    
+
     try {
       if (type === 'supplier') {
         await fetchWithAuth(`/admin/suppliers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'REJECTED', rejectionReason: reason }) });
@@ -83,8 +83,8 @@ export default function AdminDashboard() {
         await fetchWithAuth(`/admin/products/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'REJECTED', rejectionReason: reason }) });
         setPendingProducts(pendingProducts.filter(p => p.id !== id));
       }
-    } catch (err: any) { 
-      alert(err?.response?.data?.message || 'Action failed'); 
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Action failed');
     } finally {
       setRejectModal({ isOpen: false, type: null, id: null });
     }
@@ -258,5 +258,5 @@ export default function AdminDashboard() {
         onCancel={() => setRejectModal({ isOpen: false, type: null, id: null })}
       />
     </div>
-    );
+  );
 }

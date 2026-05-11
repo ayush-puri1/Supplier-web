@@ -9,10 +9,10 @@ export class AuditLog {
   @Prop({ type: String, required: true, index: true })
   actorId;
 
-  @Prop({ type: String, required: true, index: true })
+  @Prop({ type: String, index: true })
   actorEmail;
 
-  @Prop({ type: String, required: true, index: true })
+  @Prop({ type: String, index: true })
   actorRole;
 
   @Prop({ type: String, required: true, index: true })

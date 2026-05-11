@@ -7,7 +7,7 @@ import { fetchWithAuth } from '@/lib/api';
 import AlertBanner from '@/components/ui/AlertBanner';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  LayoutDashboard, Package, User, Bell, Settings, LogOut,
+  LayoutDashboard, Package, ShoppingCart, User, Bell, Settings, LogOut,
   Building2, MapPin, BarChart3, Shield, Check, Save,
   AlertCircle, Lock, Send,
 } from 'lucide-react';
@@ -19,6 +19,7 @@ function Sidebar() {
   const navItems = [
     { label: 'Dashboard',        icon: <LayoutDashboard size={16} />, href: '/dashboard/supplier',              active: false },
     { label: 'My Products',      icon: <Package size={16} />,         href: '/dashboard/supplier/products',      active: false },
+    { label: 'Orders',           icon: <ShoppingCart size={16} />,    href: '/dashboard/supplier/orders',        active: false },
     { label: 'Business Profile', icon: <User size={16} />,            href: '/dashboard/supplier/profile',       active: true  },
     { label: 'Notifications',    icon: <Bell size={16} />,            href: '/dashboard/supplier/notifications', active: false },
     { label: 'Settings',         icon: <Settings size={16} />,        href: '/dashboard/supplier/settings',      active: false },

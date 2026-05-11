@@ -77,8 +77,8 @@ export class ProductsController {
   @ApiOperation({ summary: 'Get all products for the current supplier' })
   @Bind(Request(), Query())
   async findAll(req, pagination) {
-    const skip = pagination?.skip || 0;
-    const take = pagination?.take || 20;
+    const skip = Number(pagination?.skip) || 0;
+    const take = Number(pagination?.take) || 20;
     return this.productsService.findAll(req.user.userId, skip, take);
   }
 

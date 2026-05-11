@@ -28,13 +28,15 @@ import { SearchModule } from './search/search.module';
     }),
     AuthModule,
     UsersModule,
+    /*
     ThrottlerModule.forRoot([
       {
         name: 'short',
         ttl: 60000,
-        limit: 5,
+        limit: 100,
       },
     ]),
+    */
     ProductsModule,
     DocumentsModule,
     AdminModule,
@@ -50,10 +52,12 @@ import { SearchModule } from './search/search.module';
   controllers: [AppController],
   providers: [
     AppService,
+    /*
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    */
   ],
 })
 export class AppModule {}

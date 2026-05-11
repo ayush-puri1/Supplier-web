@@ -89,8 +89,8 @@ export class AdminController {
   async getSuppliers(status, pagination) {
     return this.adminService.findAllSuppliers(
       status,
-      pagination?.skip || 0,
-      pagination?.take || 20,
+      Number(pagination?.skip) || 0,
+      Number(pagination?.take) || 20,
     );
   }
 
@@ -103,8 +103,8 @@ export class AdminController {
   @Bind(Query())
   async getPendingSuppliers(pagination) {
     return this.adminService.getPendingSuppliers(
-      pagination?.skip || 0,
-      pagination?.take || 20,
+      Number(pagination?.skip) || 0,
+      Number(pagination?.take) || 20,
     );
   }
 
@@ -147,8 +147,8 @@ export class AdminController {
   async getAllProducts(status, pagination) {
     return this.adminService.getAllProducts(
       status,
-      pagination?.skip || 0,
-      pagination?.take || 20,
+      Number(pagination?.skip) || 0,
+      Number(pagination?.take) || 20,
     );
   }
 
@@ -191,8 +191,8 @@ export class AdminController {
   @Bind(Query())
   async getAllUsers(pagination) {
     return this.adminService.findAllUsers(
-      pagination?.skip || 0,
-      pagination?.take || 20,
+      Number(pagination?.skip) || 0,
+      Number(pagination?.take) || 20,
     );
   }
 
@@ -338,8 +338,8 @@ export class AdminController {
   @Bind(Query())
   async getActiveSessions(pagination) {
     return this.sessionService.getAllSessionsForAdmin(
-      pagination?.skip || 0,
-      pagination?.take || 20,
+      Number(pagination?.skip) || 0,
+      Number(pagination?.take) || 20,
     );
   }
 
