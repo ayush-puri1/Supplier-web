@@ -87,6 +87,8 @@ export class SupplierService {
     // Whitelist of allowed fields to prevent security tampering
     const allowedFields = [
       'companyName',
+      'businessType',
+      'hqState',
       'gstNumber',
       'panNumber',
       'address',
@@ -194,9 +196,20 @@ export class SupplierService {
       where: { id: 'singleton' },
     });
 
+    const pendingOrders = supplier.orders.filter(
+      (o) => o.status === 'PENDING',
+    ).length;
+    const inTransit = supplier.orders.filter(
+      (o) => o.status === 'SHIPPED',
+    ).length;
+
     return {
       productStats,
       salesStats,
+      orderPipeline: {
+        pendingOrders,
+        inTransit,
+      },
       notifications,
       commission: config?.businessCommission || 10,
     };

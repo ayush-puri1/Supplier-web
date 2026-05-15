@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { fetchWithAuth } from '@/lib/api';
 import {
   LayoutDashboard, Package, ShoppingCart, User, Bell, Settings, LogOut,
-  Camera, Shield, BellRing, PhoneCall, Trash2, Mail, MessageCircle, AlertTriangle
+  Shield, BellRing, PhoneCall, Trash2, Mail, MessageCircle, AlertTriangle, Check, X, Eye, EyeOff
 } from 'lucide-react';
 
 /* ════════ SIDEBAR ════════ */
@@ -66,21 +67,6 @@ const baseInput: React.CSSProperties = {
   padding: '12px 14px', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s',
 };
 
-function Field({ label, value, type = 'text', onChange }: { label: string; value: string; type?: string; onChange?: (v: string) => void }) {
-  const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.currentTarget.style.borderColor = '#3B82F6'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
-  };
-  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = 'none';
-  };
-  return (
-    <div>
-      <label style={labelStyle}>{label}</label>
-      <input type={type} value={value} onChange={e => onChange?.(e.target.value)} style={baseInput} onFocus={onFocus} onBlur={onBlur} />
-    </div>
-  );
-}
-
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div style={{ background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
@@ -109,14 +95,59 @@ function Toggle({ checked, onChange, label, description }: { checked: boolean; o
 
 /* ════════ MAIN PAGE ════════ */
 export default function SettingsPage() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
 
-  const [toggles, setToggles] = useState({
-    email: true,
-    sms: false,
-    app: true,
-  });
+  // Profile state (loaded from API)
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profileCity, setProfileCity] = useState('');
+  const [profileCountry, setProfileCountry] = useState('');
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwSuccess, setPwSuccess] = useState('');
+  const [pwError, setPwError] = useState('');
+
+  // Notification toggles (UI-only preferences)
+  const [toggles, setToggles] = useState({ email: true, sms: false, app: true });
+
+  // Load profile from /supplier/me
+  useEffect(() => {
+    fetchWithAuth('/supplier/me')
+      .then((data: any) => {
+        setProfileEmail(data?.user?.email || user?.email || '');
+        setProfileCity(data?.city || '');
+        setProfileCountry(data?.country || '');
+      })
+      .catch(() => {
+        setProfileEmail(user?.email || '');
+      });
+  }, [user]);
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || newPassword.length < 6) {
+      setPwError('New password must be at least 6 characters.');
+      return;
+    }
+    setPwLoading(true); setPwError(''); setPwSuccess('');
+    try {
+      await fetchWithAuth('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      setPwSuccess('Password updated successfully.');
+      setCurrentPassword(''); setNewPassword('');
+      setTimeout(() => setPwSuccess(''), 4000);
+    } catch (err: any) {
+      setPwError(err?.response?.data?.message || 'Failed to update password.');
+    } finally {
+      setPwLoading(false);
+    }
+  };
 
   return (
     <>
@@ -129,6 +160,13 @@ export default function SettingsPage() {
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         .anim-up { animation:fadeUp 0.45s cubic-bezier(.22,1,.36,1) both; }
         .btn-hover:hover { transform: translateY(-1px); filter: brightness(1.1); }
+        .settings-input { width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:white; font-family:'DM Sans',sans-serif; font-size:14px; padding:12px 14px; outline:none; transition:border-color 0.2s,box-shadow 0.2s; }
+        .settings-input:focus { border-color:#3B82F6; box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
+        .settings-input:disabled { color:rgba(255,255,255,0.35); cursor:not-allowed; background:rgba(255,255,255,0.025); }
+        .pw-wrap { position:relative; }
+        .pw-wrap input { padding-right:44px; }
+        .pw-eye { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.3); display:flex; align-items:center; }
+        .pw-eye:hover { color:white; }
       `}</style>
 
       <div style={{ display: 'flex', minHeight: '100vh', background: '#141414' }}>
@@ -142,41 +180,92 @@ export default function SettingsPage() {
           <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px 80px' }}>
             <div className="anim-up" style={{ maxWidth: 760, margin: '0 auto' }}>
 
-              {/* Page heading */}
               <div style={{ marginBottom: 26 }}>
                 <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 26, fontWeight: 700, color: 'white', letterSpacing: '-0.02em', marginBottom: 4 }}>Settings</h1>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.28)' }}>Manage your account preferences, security, and support.</p>
               </div>
 
-              {/* 1. Profile / Personal Info */}
-              <Section title="Personal Info" icon={<User size={14} />}>
-                <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-                  <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}
-                       onMouseEnter={e => { e.currentTarget.style.borderColor = '#3B82F6'; e.currentTarget.style.color = '#3B82F6'; }}
-                       onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}>
-                    <Camera size={18} style={{ marginBottom: 4 }} />
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Upload</span>
+              {/* 1. Account Info (read-only, from API) */}
+              <Section title="Account Info" icon={<User size={14} />}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div>
+                    <label style={labelStyle}>Email Address</label>
+                    <input className="settings-input" value={profileEmail} disabled />
                   </div>
-                  <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                    <Field label="Full Name" value="Store Owner" />
-                    <Field label="Contact Email" value="supplier@delraw.com" />
-                    <Field label="Location" value="New Delhi, India" />
+                  <div>
+                    <label style={labelStyle}>City</label>
+                    <input className="settings-input" value={profileCity || '—'} disabled />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Country</label>
+                    <input className="settings-input" value={profileCountry || '—'} disabled />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                    <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.3)', lineHeight: 1.6 }}>
+                      To update your business details, visit the{' '}
+                      <a href="/dashboard/supplier/profile" style={{ color: '#60A5FA', textDecoration: 'none' }}>Business Profile</a> page.
+                    </p>
                   </div>
                 </div>
               </Section>
 
-              {/* 2. Security */}
+              {/* 2. Security — live password change */}
               <Section title="Security" icon={<Shield size={14} />}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, alignItems: 'end' }}>
-                  <Field label="Current Password" type="password" value="********" />
-                  <Field label="New Password" type="password" value="" />
-                  <button className="btn-hover" style={{ height: 45, width: '100%', borderRadius: 10, background: '#2563EB', color: 'white', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 0 16px rgba(37,99,235,0.3)', transition: 'all 0.2s' }}>
-                    Update Password
-                  </button>
+                {pwError && (
+                  <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 10, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <X size={14} color="#F87171" />
+                    <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: '#F87171' }}>{pwError}</span>
+                  </div>
+                )}
+                {pwSuccess && (
+                  <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 10, background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Check size={14} color="#34D399" />
+                    <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: '#34D399' }}>{pwSuccess}</span>
+                  </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                  <div>
+                    <label style={labelStyle}>Current Password</label>
+                    <div className="pw-wrap">
+                      <input
+                        className="settings-input"
+                        type={showCurrent ? 'text' : 'password'}
+                        value={currentPassword}
+                        onChange={e => setCurrentPassword(e.target.value)}
+                        placeholder="Enter current password"
+                      />
+                      <button className="pw-eye" onClick={() => setShowCurrent(p => !p)}>
+                        {showCurrent ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>New Password</label>
+                    <div className="pw-wrap">
+                      <input
+                        className="settings-input"
+                        type={showNew ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        placeholder="Min 6 characters"
+                      />
+                      <button className="pw-eye" onClick={() => setShowNew(p => !p)}>
+                        {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
+                <button
+                  className="btn-hover"
+                  onClick={handleChangePassword}
+                  disabled={pwLoading || !currentPassword || newPassword.length < 6}
+                  style={{ padding: '12px 24px', borderRadius: 10, background: pwLoading || !currentPassword || newPassword.length < 6 ? 'rgba(255,255,255,0.06)' : '#2563EB', color: pwLoading || !currentPassword || newPassword.length < 6 ? 'rgba(255,255,255,0.3)' : 'white', fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, border: 'none', cursor: pwLoading || !currentPassword || newPassword.length < 6 ? 'not-allowed' : 'pointer', boxShadow: !pwLoading && currentPassword && newPassword.length >= 6 ? '0 0 16px rgba(37,99,235,0.3)' : 'none', transition: 'all 0.2s' }}
+                >
+                  {pwLoading ? 'Updating...' : 'Update Password'}
+                </button>
               </Section>
 
-              {/* 3. Notifications */}
+              {/* 3. Notifications (UI preferences only) */}
               <Section title="Notifications" icon={<BellRing size={14} />}>
                 <Toggle checked={toggles.email} onChange={() => setToggles({ ...toggles, email: !toggles.email })} label="Email Notifications" description="Receive updates on orders, product approvals, and account status." />
                 <div style={{ height: 1, background: 'rgba(255,255,255,0.05)' }} />
@@ -188,28 +277,25 @@ export default function SettingsPage() {
               {/* 4. Support */}
               <Section title="Help & Support" icon={<MessageCircle size={14} />}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                  {/* Email */}
-                  <a href="mailto:support@delraw.com" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '20px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
+                  <a href="mailto:ayush@delraw.com" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '20px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(96,165,250,0.1)', color: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Mail size={18} /></div>
                     <div style={{ textAlign: 'center' }}>
-                      <p style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 2 }}>Email Support</p>
-                      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>ayush@delraw.com</p>
+                      <p style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 2 }}>Email Support</p>
+                      <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>ayush@delraw.com</p>
                     </div>
                   </a>
-                  {/* Call */}
                   <a href="tel:+918146729779" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '20px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(52,211,153,0.1)', color: '#34D399', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><PhoneCall size={18} /></div>
                     <div style={{ textAlign: 'center' }}>
-                      <p style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 2 }}>Call Us</p>
-                      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>+91 81467 29779</p>
+                      <p style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 2 }}>Call Us</p>
+                      <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>+91 81467 29779</p>
                     </div>
                   </a>
-                  {/* WhatsApp */}
                   <a href="https://wa.me/918146729779" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '20px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(52,211,153,0.1)', color: '#34D399', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MessageCircle size={18} /></div>
                     <div style={{ textAlign: 'center' }}>
-                      <p style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 2 }}>WhatsApp</p>
-                      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Quick chat</p>
+                      <p style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 2 }}>WhatsApp</p>
+                      <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Quick chat</p>
                     </div>
                   </a>
                 </div>
@@ -219,17 +305,16 @@ export default function SettingsPage() {
               <div style={{ marginTop: 40, padding: '24px', borderRadius: 14, background: 'rgba(248,113,113,0.04)', border: '1px solid rgba(248,113,113,0.15)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                   <AlertTriangle size={16} color="#F87171" />
-                  <p style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: '#F87171' }}>Danger Zone</p>
+                  <p style={{ fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 700, color: '#F87171' }}>Danger Zone</p>
                 </div>
-                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 20 }}>
+                <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 20 }}>
                   Take actions to manage your session or permanently remove your account from the system.
                 </p>
-
                 <div style={{ display: 'flex', gap: 12 }}>
-                  <button onClick={() => { logout?.(); router.push('/login'); }} className="btn-hover" style={{ flex: 1, padding: '14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
+                  <button onClick={() => { logout?.(); router.push('/login'); }} className="btn-hover" style={{ flex: 1, padding: '14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
                     <LogOut size={16} /> Sign Out of Account
                   </button>
-                  <button className="btn-hover" style={{ flex: 1, padding: '14px', borderRadius: 10, background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.25)', color: '#F87171', fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
+                  <button className="btn-hover" style={{ flex: 1, padding: '14px', borderRadius: 10, background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.25)', color: '#F87171', fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
                     <Trash2 size={16} /> Delete Account Permanently
                   </button>
                 </div>

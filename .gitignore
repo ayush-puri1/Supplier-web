@@ -1,1 +1,6 @@
 PROJECT_CONTEXT.md
+
+delraw-backend/node_modules
+website/node_modules
+
+disable_restrictions.js

@@ -129,4 +129,21 @@ export class AuthController {
     if (!token) throw new UnauthorizedException('Token not found');
     return this.authService.logout(token, req.user.userId);
   }
+
+  /**
+   * POST /auth/change-password
+   * Changes password for the authenticated user.
+   */
+  @UseGuards(AuthGuard('jwt'))
+  @Post('change-password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change password' })
+  @Bind(Request(), Body())
+  changePassword(req, dto) {
+    return this.authService.changePassword(
+      req.user.userId,
+      dto.currentPassword,
+      dto.newPassword,
+    );
+  }
 }

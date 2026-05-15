@@ -17,7 +17,7 @@ export default function OnboardingForm({ profile, onComplete }: { profile?: any;
         phone: profile?.phone || '',
         address: profile?.address || '',
         city: profile?.city || '',
-        state: profile?.state || '',
+        state: profile?.hqState || profile?.state || '',
         pincode: profile?.pincode || '',
         // Step 3 (files)
         gstDoc: null as File | null,
@@ -55,9 +55,11 @@ export default function OnboardingForm({ profile, onComplete }: { profile?: any;
                     gstNumber: formData.gstNumber,
                     panNumber: formData.panNumber,
                     businessType: formData.businessType,
+                    hqState: formData.state,
                     yearEstablished: formData.yearEstablished ? parseInt(formData.yearEstablished as string) : 2024,
                     address: formData.address,
                     city: formData.city,
+                    country: 'India',
                 }),
             });
 

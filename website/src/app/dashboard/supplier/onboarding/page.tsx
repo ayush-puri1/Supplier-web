@@ -119,8 +119,9 @@ function PendingView({ profile }: { profile: any }) {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <LockedField label="Year Est." value={profile?.yearEstablished?.toString() || ''} />
-              <LockedField label="HQ City" value={profile?.city || ''} />
+              <LockedField label="HQ State / UT" value={profile?.hqState || ''} />
             </div>
+            <LockedField label="City" value={profile?.city || ''} />
           </div>
           {/* Notice */}
           <div style={{ margin: '0 22px 22px', padding: '13px 16px', borderRadius: 10, background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.12)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -189,7 +190,7 @@ export default function OnboardingPage() {
   const [businessType, setBusinessTypeVal] = useState('');
   const [gstNumber, setGstNumber] = useState('');
   const [panNumber, setPanNumber] = useState('');
-  const [hqLocation, setHqLocation] = useState('');
+  const [hqState, setHqState] = useState('');
   const [yearEstablished, setYearEstablished] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
@@ -210,7 +211,7 @@ export default function OnboardingPage() {
         setBusinessTypeVal(data.businessType || '');
         setGstNumber(data.gstNumber || '');
         setPanNumber(data.panNumber || '');
-        setHqLocation(data.city || '');
+        setHqState(data.hqState || '');
         setYearEstablished(data.yearEstablished?.toString() || '');
         setAddress(data.address || '');
         setCity(data.city || '');
@@ -229,7 +230,10 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           companyName, gstNumber, panNumber, businessType,
           yearEstablished: parseInt(yearEstablished) || 0,
-          address, city: hqLocation, country: 'India',
+          address,
+          hqState,
+          city: city.trim() || '',
+          country: 'India',
           workforceSize: parseInt(workforceSize) || 0,
           monthlyCapacity: parseInt(monthlyCapacity) || 0,
         }),
@@ -462,7 +466,7 @@ export default function OnboardingPage() {
                               </div>
                               <div style={{ gridColumn: '1 / -1' }}>
                                 <label className="onb-label">HQ State / UT</label>
-                                <select className="onb-select" value={hqLocation} onChange={e => setHqLocation(e.target.value)}>
+                                <select className="onb-select" value={hqState} onChange={e => setHqState(e.target.value)}>
                                   <option value="">Select state / UT</option>
                                   {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
@@ -522,7 +526,7 @@ export default function OnboardingPage() {
                           <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                               {[
-                                { title: 'Business', goTo: 1, rows: [['Name', companyName||'—'],['Type', businessType||'—'],['GST', gstNumber||'—'],['PAN', panNumber||'—'],['Est.', yearEstablished||'—'],['HQ', hqLocation||'—']] },
+                                { title: 'Business', goTo: 1, rows: [['Name', companyName||'—'],['Type', businessType||'—'],['GST', gstNumber||'—'],['PAN', panNumber||'—'],['Est.', yearEstablished||'—'],['HQ State', hqState||'—']] },
                                 { title: 'Operations', goTo: 2, rows: [['Address', address||'—'],['City', city||'—'],['Country','India'],['Workforce', workforceSize?`${workforceSize} people`:'—'],['Capacity', monthlyCapacity?`${monthlyCapacity} units/mo`:'—']] },
                               ].map(panel => (
                                 <div key={panel.title} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '16px 18px' }}>

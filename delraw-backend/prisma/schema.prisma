@@ -46,6 +46,8 @@ model Supplier {
   id              String         @id @default(uuid())
   userId          String         @unique
   companyName     String
+  businessType    String         @default("")
+  hqState         String         @default("")
   status          SupplierStatus @default(DRAFT)
   address         String
   city            String

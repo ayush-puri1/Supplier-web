@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { fetchWithAuth } from '@/lib/api';
 import {
   Package, Clock, Truck, Search, Bell, User, Settings,
   LayoutDashboard, LogOut, Check, X, AlertCircle, Zap,
@@ -38,14 +39,60 @@ interface NotificationItem {
   time: Date;
 }
 
-/* ══════════════════════════════════════════════
-   DEMO DATA
-══════════════════════════════════════════════ */
-const DEMO_ORDERS: Order[] = [
-  { id: 'ORD-001', customerName: 'Apex Retailers', items: 'Premium Cotton Tee × 3', quantity: 3, price: 3600, status: 'new', receivedAt: Date.now() - 2 * 60 * 1000 },
-  { id: 'ORD-002', customerName: 'StyleHouse Co.', items: 'Eco Tote Bag × 12', quantity: 12, price: 5400, status: 'new', receivedAt: Date.now() - 8 * 60 * 1000 },
-  { id: 'ORD-003', customerName: 'Metro Fashion', items: 'Leather Wallet × 5', quantity: 5, price: 10500, status: 'accepted', receivedAt: Date.now() - 12 * 60 * 1000 },
-];
+type ApiOrderStatus = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+
+interface ApiOrderRow {
+  id: string;
+  quantity: number;
+  totalAmount: number;
+  status: ApiOrderStatus;
+  createdAt: string;
+  product?: { name?: string };
+}
+
+function mapApiStatusToUi(s: ApiOrderStatus): OrderStatus {
+  switch (s) {
+    case 'PENDING':
+      return 'new';
+    case 'PROCESSING':
+      return 'accepted';
+    case 'SHIPPED':
+      return 'ready';
+    case 'DELIVERED':
+      return 'delivered';
+    case 'CANCELLED':
+      return 'rejected';
+    default:
+      return 'new';
+  }
+}
+
+function mapUiActionToApiStatus(next: OrderStatus): ApiOrderStatus | null {
+  switch (next) {
+    case 'accepted':
+      return 'PROCESSING';
+    case 'ready':
+      return 'SHIPPED';
+    case 'dispatched':
+      return 'DELIVERED';
+    case 'rejected':
+      return 'CANCELLED';
+    default:
+      return null;
+  }
+}
+
+function mapApiOrderToCard(o: ApiOrderRow): Order {
+  return {
+    id: o.id,
+    customerName: 'B2B buyer',
+    items: `${o.quantity}× ${o.product?.name ?? 'Product'}`,
+    quantity: o.quantity,
+    price: o.totalAmount,
+    status: mapApiStatusToUi(o.status),
+    receivedAt: new Date(o.createdAt).getTime(),
+  };
+}
 
 /* ══════════════════════════════════════════════
    COUNTDOWN HOOK
@@ -187,6 +234,7 @@ function OrderCard({ order, onAction }: { order: Order; onAction: (id: string, n
     expired: { label: 'Expired', dot: '#F87171', bg: 'rgba(248,113,113,0.1)', color: '#F87171' },
   };
   const sc = statusColors[order.status];
+  const inTransitUi = order.status === 'ready' || order.status === 'dispatched';
 
   return (
     <div style={{
@@ -235,7 +283,7 @@ function OrderCard({ order, onAction }: { order: Order; onAction: (id: string, n
       </div>
 
       {/* ── "ON THE WAY" TRACKER ── */}
-      {order.status === 'dispatched' && (
+      {inTransitUi && (
         <div style={{ margin: '0 20px 14px', padding: '12px 16px', borderRadius: 10, background: 'rgba(167,139,250,0.07)', border: '1px solid rgba(167,139,250,0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(167,139,250,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Navigation size={14} color="#A78BFA" style={{ animation: 'navigate 2s linear infinite' }} />
@@ -290,7 +338,7 @@ function OrderCard({ order, onAction }: { order: Order; onAction: (id: string, n
       )}
 
       {/* ── COMPLETION BANNERS ── */}
-      {order.status === 'dispatched' && (
+      {inTransitUi && (
         <div style={{ margin: '0 20px 16px', padding: '12px 16px', borderRadius: 10, background: 'rgba(167,139,250,0.07)', border: '1px solid rgba(167,139,250,0.18)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(167,139,250,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Navigation size={13} color="#A78BFA" style={{ animation: 'navigate 2s linear infinite' }} />
@@ -455,7 +503,11 @@ function NotificationPanel({
 export default function SupplierDashboard() {
   const { user } = useAuth();
   const [storeOpen, setStoreOpen] = useState(true);
-  const [orders, setOrders] = useState<Order[]>(DEMO_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [orderPipeline, setOrderPipeline] = useState({ pendingOrders: 0, inTransit: 0 });
+  const [productStats, setProductStats] = useState({ total: 0, live: 0, pending: 0 });
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [flash, setFlash] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -474,35 +526,84 @@ export default function SupplierDashboard() {
     setTimeout(() => setFlash(false), 600);
   }, []);
 
-  const handleOrderAction = useCallback((id: string, next: OrderStatus) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: next } : o));
-    if (next === 'accepted') { triggerFlash(); pushToast('success', `Order ${id} accepted — prepare for fulfillment.`); }
-    else if (next === 'rejected') { pushToast('warning', `Order ${id} has been rejected.`); }
-    else if (next === 'ready') { pushToast('info', `Order ${id} marked as ready for pickup.`); }
-    else if (next === 'dispatched') { triggerFlash(); pushToast('success', `Order ${id} dispatched — on the way!`); }
-    else if (next === 'delivered') { triggerFlash(); pushToast('success', `Order ${id} delivered successfully!`); }
-    else if (next === 'expired') { pushToast('warning', `Order ${id} acceptance window expired — auto rejected.`); }
-  }, [pushToast, triggerFlash]);
+  const loadOrders = useCallback(async () => {
+    setOrdersLoading(true);
+    try {
+      const res = await fetchWithAuth('/orders/my?take=50');
+      const items = (res && typeof res === 'object' && 'items' in res ? (res as { items: ApiOrderRow[] }).items : []) as ApiOrderRow[];
+      setOrders(items.map(mapApiOrderToCard));
+    } catch {
+      setOrders([]);
+      pushToast('warning', 'Could not load orders. Is the API running?');
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [pushToast]);
 
-  /* simulate incoming order */
   useEffect(() => {
-    const t = setTimeout(() => {
-      setOrders(prev => {
-        if (prev.some(o => o.id === 'ORD-004')) return prev;
-        return [{ id: 'ORD-004', customerName: 'Fabric King Ltd.', items: 'Raw Linen Fabric × 20m', quantity: 20, price: 8000, status: 'new', receivedAt: Date.now() }, ...prev];
-      });
-      triggerFlash();
-      pushToast('info', 'New order received from Fabric King Ltd.!');
-    }, 8000);
-    return () => clearTimeout(t);
+    (async () => {
+      setDashboardLoading(true);
+      try {
+        const dash = await fetchWithAuth('/supplier/dashboard');
+        if (dash?.productStats) setProductStats(dash.productStats);
+        if (dash?.orderPipeline) setOrderPipeline(dash.orderPipeline);
+      } catch {
+        pushToast('warning', 'Could not load dashboard stats.');
+      } finally {
+        setDashboardLoading(false);
+      }
+    })();
+  }, [pushToast]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  const handleOrderAction = useCallback(async (id: string, next: OrderStatus) => {
+    if (next === 'expired') {
+      setOrders(prev => prev.map(o => (o.id === id ? { ...o, status: next } : o)));
+      pushToast('warning', `Order ${id.slice(0, 8)}… acceptance window expired — auto rejected.`);
+      return;
+    }
+
+    const apiStatus = mapUiActionToApiStatus(next);
+    if (!apiStatus) return;
+
+    try {
+      const updated = (await fetchWithAuth(`/orders/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: apiStatus }),
+      })) as { status: ApiOrderStatus };
+      const newUi = mapApiStatusToUi(updated.status);
+      setOrders(prev => prev.map(o => (o.id === id ? { ...o, status: newUi } : o)));
+      if (next === 'accepted') {
+        triggerFlash();
+        pushToast('success', `Order accepted — prepare for fulfillment.`);
+      } else if (next === 'rejected') {
+        pushToast('warning', `Order cancelled.`);
+      } else if (next === 'ready') {
+        pushToast('info', `Order marked shipped / in transit.`);
+      } else if (next === 'dispatched') {
+        triggerFlash();
+        pushToast('success', `Order marked delivered.`);
+      } else if (next === 'delivered') {
+        triggerFlash();
+        pushToast('success', `Order completed.`);
+      }
+      const dash = await fetchWithAuth('/supplier/dashboard');
+      if (dash?.orderPipeline) setOrderPipeline(dash.orderPipeline);
+      if (dash?.productStats) setProductStats(dash.productStats);
+    } catch {
+      pushToast('warning', 'Could not update order status.');
+    }
   }, [pushToast, triggerFlash]);
 
-  const pendingCount = orders.filter(o => o.status === 'new').length;
-  const inTransitCount = orders.filter(o => o.status === 'dispatched').length;
-  const liveProducts = 8;
+  const pendingCount = orderPipeline.pendingOrders || orders.filter(o => o.status === 'new').length;
+  const inTransitCount = orderPipeline.inTransit || orders.filter(o => o.status === 'ready' || o.status === 'dispatched').length;
+  const liveProducts = productStats.live;
 
   const activeOrders = orders.filter(o => ['new', 'accepted', 'ready'].includes(o.status));
-  const completedOrders = orders.filter(o => ['dispatched', 'delivered', 'rejected', 'expired'].includes(o.status));
+  const completedOrders = orders.filter(o => ['delivered', 'rejected', 'expired', 'dispatched'].includes(o.status));
 
   return (
     <>
@@ -567,9 +668,9 @@ export default function SupplierDashboard() {
             {/* STAT CARDS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 32 }}>
               {[
-                { label: 'Pending Orders', value: pendingCount, icon: <Clock size={20} />, color: '#FBBF24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.15)', note: pendingCount > 0 ? 'Need attention' : 'All clear' },
-                { label: 'Orders in Transit', value: inTransitCount, icon: <Truck size={20} />, color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.15)', note: 'Currently dispatched' },
-                { label: 'Live Products', value: liveProducts, icon: <Package size={20} />, color: '#34D399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.15)', note: 'Active in catalog' },
+                { label: 'Pending Orders', value: dashboardLoading ? '—' : pendingCount, icon: <Clock size={20} />, color: '#FBBF24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.15)', note: pendingCount > 0 ? 'Need attention' : 'All clear' },
+                { label: 'Orders in Transit', value: dashboardLoading ? '—' : inTransitCount, icon: <Truck size={20} />, color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.15)', note: 'Currently dispatched' },
+                { label: 'Live Products', value: dashboardLoading ? '—' : liveProducts, icon: <Package size={20} />, color: '#34D399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.15)', note: 'Active in catalog' },
               ].map(card => (
                 <div key={card.label} style={{ background: '#1E1E1E', borderRadius: 14, border: `1px solid ${card.border}`, padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{ width: 46, height: 46, borderRadius: 12, flexShrink: 0, background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: card.color }}>{card.icon}</div>
@@ -602,7 +703,11 @@ export default function SupplierDashboard() {
                   )}
                 </div>
 
-                {activeOrders.length === 0 ? (
+                {ordersLoading ? (
+                  <div style={{ background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '48px 20px', textAlign: 'center' as const }}>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.28)' }}>Loading orders…</p>
+                  </div>
+                ) : activeOrders.length === 0 ? (
                   <div style={{ background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '48px 20px', textAlign: 'center' as const }}>
                     <CheckCircle2 size={36} color="rgba(52,211,153,0.35)" style={{ margin: '0 auto 14px' }} />
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.28)' }}>All orders handled — queue is empty.</p>
