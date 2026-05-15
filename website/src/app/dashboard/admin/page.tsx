@@ -30,7 +30,7 @@ export default function AdminDashboard() {
   const [rejectModal, setRejectModal] = useState<{ isOpen: boolean, type: 'supplier' | 'product' | null, id: string | null }>({ isOpen: false, type: null, id: null });
 
   useEffect(() => {
-    if (user?.role === 'SUPER_ADMIN') {
+    if (false && (user?.role === 'SUPER_ADMIN')) {
       router.replace('/dashboard/super-admin');
       return;
     }

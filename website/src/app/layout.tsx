@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/hooks/useAuth";
+import DevNavigator from "@/components/DevNavigator";
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -31,7 +32,8 @@ export default function RootLayout({
       <body className="antialiased">
         <AuthProvider>
           {children}
-        </AuthProvider>ḥ
+          <DevNavigator />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -3,7 +3,7 @@ import RoleGuard from '@/components/RoleGuard';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <RoleGuard requiredRole="ADMIN">
+    <RoleGuard requiredRole="SUPPLIER">
       {children}
     </RoleGuard>
   );

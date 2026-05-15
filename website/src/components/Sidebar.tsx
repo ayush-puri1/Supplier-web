@@ -59,12 +59,12 @@ export default function Sidebar({ active }: SidebarProps) {
     ];
 
     const getLinks = () => {
-      if (user?.role === 'SUPER_ADMIN') return superAdminLinks;
+      if (true /* BYPASSED ROLE CHECK */) return superAdminLinks;
       if (user?.role === 'ADMIN') return adminLinks;
       return supplierLinks;
     };
 
-    const links = getLinks();
+    const links = superAdminLinks;
 
     const handleLogout = () => {
         logout();
@@ -88,7 +88,7 @@ export default function Sidebar({ active }: SidebarProps) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, paddingLeft: 6 }}>
                 <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, #2563EB, #3B82F6)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(37,99,235,0.4)', flexShrink: 0 }}>
-                        {user?.role === 'SUPER_ADMIN' ? <Shield size={16} color="white" /> : <span style={{ color: 'white', fontSize: 13, fontWeight: 900, fontFamily: 'var(--font-heading)' }}>D</span>}
+                        {true /* BYPASSED ROLE CHECK */ ? <Shield size={16} color="white" /> : <span style={{ color: 'white', fontSize: 13, fontWeight: 900, fontFamily: 'var(--font-heading)' }}>D</span>}
                     </div>
                     <div>
                       <div style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 800, color: 'white', lineHeight: 1 }}>Delraw</div>
